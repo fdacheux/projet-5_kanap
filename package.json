@@ -1,0 +1,21 @@
+{
+  "dependencies": {
+    "husky": "^8.0.1"
+  },
+  "scripts": {
+    "prepare": "husky install"
+  },
+
+  "config": {
+    "commitizen": {
+      "path": "@commitlint/cz-commitlint"
+    }
+  },
+  
+  "devDependencies": {
+    "@commitlint/cli": "^17.0.2",
+    "@commitlint/config-conventional": "^17.0.2",
+    "@commitlint/cz-commitlint": "^17.0.0",
+    "commitizen": "^4.2.4"
+  }
+}
