@@ -6,21 +6,21 @@ fetch(apiUrl)
   .then(response => response.json())
   .then(function(data) {
 
-  let productArray = data;
+    let productArray = data;
 
-  //use a map to create cards : 
-  return productArray.map(function(productArray) {
+    //use a map to create cards : 
+    return productArray.map(function(productArray) {
 
-    //check if template element is available for browser
-    //if ("content" in document.createElement("template")) {
+      //check if template element is available for browser
+      //if ("content" in document.createElement("template")) {
 
-    // Locate DOM elements and clone them
+      // Locate DOM elements and clone them
       let template = document.querySelector("#item-card");
       let clone = document.importNode(template.content, true);
       let itemLink = clone.querySelector('a');
       let itemImage = clone.querySelector('img');
       let productName = clone.querySelector('.productName');
-      let productDescription = clone.querySelector ('.productDescription');
+      let productDescription = clone.querySelector('.productDescription');
 
     // Inject the API elements inside the clones
       itemLink.setAttribute ("href",`./product.html?id=${productArray._id}`);
@@ -33,7 +33,7 @@ fetch(apiUrl)
       itemCards.appendChild(clone);
       
     /*}*/
+    })
   })
-})
 
-.catch(err => console.error(err.stack));
+  .catch(err => console.error(err.stack));
