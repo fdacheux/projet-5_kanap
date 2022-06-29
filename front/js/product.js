@@ -17,17 +17,41 @@ fetch(productApiUrl)
     .then(response => response.json())
     .then(function(data) {
         console.log(data);
-        // Insert photo
-        const itemImageBox = document.querySelector('.item__img');
-        console.log(itemImageBox);
-        const img = document.createElement('img');
-        img.src = data.imageUrl;
-        img.alt = data.altTxt;
-        itemImageBox.appendChild(img);
 
+        // ÉTAPE 1 : Insert photo  
+        const itemImageBox = document.querySelector('.item__img'); //get node
+        /* console.log(itemImageBox); */
+
+        // CREATE IMG TAGS
+        const newImgTag = document.createElement('img'); 
+        newImgTag.src = data.imageUrl;
+        newImgTag.alt = data.altTxt;
+
+        //ADD IMG TAGS
+        itemImageBox.appendChild(newImgTag);
+
+
+        // ÉTAPE 2 : Insert description elements
         document.getElementById('title').textContent = data.name;
         document.getElementById('price').textContent = data.price;
         document.getElementById('description').textContent = data.description;
+
+
+        // 3) ÉTAPE 3 : Insert colors options
+        let colorsArray = data.colors;   
+        const colorSelectTag = document.getElementById('colors');
+        /*Check values :
+        // console.log(colorsArray);
+        // console.log(colorSelectElement);*/
+        
+        //CREATE NEW OPTION TAGS
+        for (const element of colorsArray) {
+            const newOptionTag = document.createElement('option');
+            // console.log(newOptionElement);
+            newOptionTag.value = element;
+            newOptionTag.text = element;
+            colorSelectTag.appendChild(newOptionTag);
+        }
 
     })
 
