@@ -40,17 +40,12 @@ fetch(productApiUrl)
     .then(function(data) {
         console.log(data);
 
-        // ÉTAPE 1 : Insert photo  
-        const itemImageBox = document.querySelector('.item__img'); //get node
-        /* console.log(itemImageBox); */
+        // ÉTAPE 1 : Insert photo of product
+        const itemImageBox = document.querySelector('.item__img img'); //get node
 
-        // CREATE IMG TAGS
-        const newImgTag = document.createElement('img'); 
-        newImgTag.src = data.imageUrl;
-        newImgTag.alt = data.altTxt;
-
-        //ADD IMG TAGS
-        itemImageBox.appendChild(newImgTag);
+        // SET ATTRIBUTES FOR IMG TAGS
+        itemImageBox.setAttribute('src', data.imageUrl);
+        itemImageBox.setAttribute('alt', data.altTxt);
 
 
         // ÉTAPE 2 : Insert description elements
@@ -61,18 +56,13 @@ fetch(productApiUrl)
 
         // 3) ÉTAPE 3 : Insert colors options
         let colorsArray = data.colors;   
-
-        /*Check values :
-        // console.log(colorsArray);
-        // console.log(colorSelectElement);*/
         
         //Create new option tags
         for (const element of colorsArray) {
-            const newOptionTag = document.createElement('option');
-            // console.log(newOptionElement);
-            newOptionTag.value = element;
-            newOptionTag.text = element;
-            colorSelectTag.appendChild(newOptionTag);
+            const newOptionTag = document.createElement('option'); // create an option tag for each element in colors property
+            newOptionTag.value = element; // Take color name and add it as value attribute of the option
+            newOptionTag.text = element; // Same but for text
+            colorSelectTag.appendChild(newOptionTag); // Add element inside parent element
         }
 
     })
