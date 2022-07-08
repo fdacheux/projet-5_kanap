@@ -33,7 +33,7 @@ async function fetchProduct (id){
 /************************* GET CART CONTENT FROM LOCAL STORAGE *************************/
 
 const CART = JSON.parse(localStorage.getItem('cart'));
-// let cart = localStorage.getItem('cart')?CART:null;
+// var cart = localStorage.getItem('cart')?CART:null;
 
 /************************* CREATE CART ON DOM *************************/
 
@@ -49,11 +49,9 @@ const selectProductCard = (id, color) => {
     return productCard;
 }
 
-// let idArray = []; // Array that will contain products' ids
+// A) Create a model of card and clone it : 
 
-// A) Create cards using cart info
-const createProductsCards = () => {
-    for (element of CART){
+const cloneProductCardTemplate = () => {
             let clone = TEMPLATE.content.cloneNode(true);
             let cartItem = clone.querySelector('article');
             let quantityInput = clone.querySelector('input');
@@ -65,26 +63,22 @@ const createProductsCards = () => {
             colorName.textContent = element.color;
             
             CART_ITEMS_CARDS.appendChild(clone);   
-    }
 }
 
-// B) Insert properties from API in each card
+// B) Get properties from api and insert it in the right element : 
 
-const calculatePrice = (price, quantity) => {
+const calculatePrice = (price, quantity) => { //calculate total price for each article
     return price*quantity
 }
 
-
-async function insertPropertiesFromApi () {
-
-    for (element of CART){
+async function insertPropertiesFromApi () { //fecth properties of product and insert them inside the cards
     
         // Get elements from CART array
     
-        let id = element.id; //get id of element
-        let color = element.color;
-        let quantities = element.quantity; // get quantity of element 
-        let totalPrice;
+        let id = element.id;  
+        let color = element.color; 
+        let quantities = element.quantity; 
+        let totalPrice = 0;
         let selectedCard = selectProductCard(id, color); //get card using data-id end data-color attributes 
     
         // Get the elements that need to be filled with API data
@@ -99,19 +93,24 @@ async function insertPropertiesFromApi () {
         let result = await fetchProduct(id); // fetch api, get product properties
         cartProductImage.setAttribute('src', `${result.imageUrl}`); //Image URL
         productName.textContent = result.name; // Name of product
-        totalPrice = calculatePrice(result.price, quantities);
+        totalPrice += calculatePrice(result.price, quantities);
         priceParagraph.textContent = `${totalPrice} €` // Total price for the product 
             
         
-        }
 }
 
-async function createCardsAndFillThem() {
-    createProductsCards()
-    await insertPropertiesFromApi()
+// Create cards for each element
+
+
+function createCardsForProductsInCart() { // Function that creates clones of card template and fills them
+    for (element of CART){
+        cloneProductCardTemplate()
+        insertPropertiesFromApi()
+    }
+    return true;
 }
 
-CART? createCardsAndFillThem():document.getElementById('cart__items').textContent='Votre panier est vide';
+CART? createCardsForProductsInCart():document.getElementById('cart__items').textContent='Votre panier est vide'; //if Cart isn't null, creates and adds the cards, else warns about cart emptiness;
 
 
 // II) DISPLAY TOTAL OF ALL PRICES AND QUANTITY OF ARTICLES :
@@ -152,43 +151,86 @@ async function getTotalPrice () {
 
 getTotalPrice();
 
-// Activate the modifications of cart from cart page 
-
-const anEvent = () => console.log('copythat');
 
 //get elements that need to be listened : 
-let arraytest = document.querySelectorAll(`[data-id]`);
-for (element of arraytest){
-    console.log(element.querySelector('.itemQuantity'))
-    element.querySelector('.itemQuantity').addEventListener('input', function(e){
-            newPrice(parseInt(element.dataset.id) , e.target.value);
-            console.log(element.dataset.id);
-    })
+
+
+/************************* ADD ELEMENT IN CART FROM CART PAGE *************************/
+
+// Elements to listen
+let idArray = [];
+for (element of CART){
+    idArray.push(element.id);
 }
 
-// document.querySelectorAll('.itemQuantity').forEach(element => {
-//     console.log(document.querySelector(`[data-id="${element.id}"] .cart__item__content__description :nth-child(3)`));
-// })
+const ALL_PRODUCTS_ARTICLES = document.querySelectorAll(`[data-id]`);
+console.log(ALL_PRODUCTS_ARTICLES);
 
-// document.querySelectorAll('.itemQuantity').forEach(element => {
-//     element.addEventListener('input', function(e) {
-//         newPrice(element.id, e.target.value);
-//     })
-// })
+const updateQuantityInCart = (elementToUpdate, quantity) => {
+    elementToUpdate.quantity = parseInt(quantity);
+    return localStorage.setItem('cart', JSON.stringify(CART))
+}
 
+let regex = /^[0-9]*$/;
 
+function inputIsValidStyle (element) {
+    element.style.borderColor = "green";
+    element.style.borderWidth = "3px";
+    element.style.color = "green";
+    element.style.fontWeight = "unset"; 
+}
 
-// const newPrice = (id, quantity) => {
-//     fetchProduct(id)
-//     .then(function(res) {
-//         let newPrice = calculatePrice(res.price, quantity);
-//         console.log(newPrice)
-//         document.querySelector(`[data-id="${id}"] .cart__item__content__description :nth-child(3)`).textContent = newPrice;
-//     })
-// }
+function inputIsNotValidStyle (element) {
+    element.style.borderColor = "red";
+    element.style.borderWidth = "3px";
+    element.style.color = "red";
+    element.style.fontWeight = "bold"; 
+}
 
-// for(element of CART){
-//     document.querySelector(`[data-id="${element.id}"] input[name="itemQuantity"]`  ).setAttribute('value', 42);
+function resetInputStyle (element) {
+    element.style.borderColor = "unset";
+    element.style.borderWidth = "unset";
+    element.style.color = "unset";
+    element.style.fontWeight = "unset";    
+}
 
+document.querySelectorAll('[data-id]').forEach(element => {
+    let id = element.dataset.id;
+    let productColor = element.dataset.color;
+    let newQuantity; 
+    let paragraph = element.querySelector('p:nth-of-type(2)');
+    const elementToUpdateInCart = CART.find(element =>  element.id === id && element.color === productColor);
+    element.addEventListener('input', event => {
+        let inputNumber = event.target.value;
+        if(!inputNumber || inputNumber>100 || inputNumber<0) {
+            inputIsNotValidStyle(event.target)    
+        }
+        else {
+            event.target.value = Math.floor(event.target.value);
+            inputIsValidStyle(event.target);
+            newQuantity = event.target.value;
+            event.target.setAttribute('value', `${newQuantity}`); //change value of input for quantity
+            updateQuantityInCart(elementToUpdateInCart, newQuantity);
+            console.log(newQuantity);
+                changePrice(id, newQuantity, paragraph); // change price
+                updateTotalQuantityAndPrice();
+            }
+        })
+    // element.addEventListener('blur', event => {
+    //     event.target.value && event.target.value<100 && event.target.value>1 ? resetInputStyle(event.target) : event.target.focus();
+    // })
+});
 
-// }
+async function changePrice (id, quantity, paragraph) { //change price depending on quantity 
+    let newPrice = await getPricePerQuantity (id, quantity);
+    paragraph.textContent = `${newPrice} €`;
+    return newPrice;
+}
+
+async function updateTotalQuantityAndPrice () {
+    total = 0;
+    totalQuantity = 0;
+    await getTotalQuantity();
+    await getTotalPrice();
+}
+

@@ -98,14 +98,21 @@ const createBoldBorderForElement = (array, colorString) => {
         element.style.borderWidth = '3px';
     }
 }
+let regex = /^[0-9]*$/;
 
-const checkQuantityValidity = () => {
+function checkQuantityValidity () {
     quantities = quantityInput.value;
-    if (quantities <= 100 && quantities>0 && quantities !== null && quantities !== NaN) {
-        addToCartButton.disabled = false;
+    if (quantities <= 100 && quantities>0 && quantities !== null && quantities !== NaN && regex.test(quantities) ) {
+        // addToCartButton.disabled = false;
         createBoldBorderForElement([quantityInput], "green");
         quantityInput.style.color = "green";
         quantityInput.style.fontWeight = "unset";
+    }
+    else if (quantities <= 100 && quantities>0 && quantities !== null && quantities !== NaN && !regex.test(quantities)) {
+        quantityInput.value = Math.floor(quantityInput.value);
+        createBoldBorderForElement([quantityInput], "green");
+        quantityInput.style.color = "green";
+        quantityInput.style.fontWeight = "unset"
     }
     else {
         createBoldBorderForElement([quantityInput], "red");
@@ -116,7 +123,7 @@ const checkQuantityValidity = () => {
 }
 
 quantityInput.addEventListener('blur', function(){
-    if(quantities <= 100 && quantities>0 && quantities !== null && quantities !== NaN){
+    if(quantities <= 100 && quantities>0 && quantities !== null && quantities !== NaN && regex.test(quantities)){
         quantityInput.style = null;
     }
 })
@@ -167,7 +174,7 @@ const addProductInCart = () => {
 }
 
 
-// If quantity and color is a valid on click, store the product in local storage
+// If quantity and color is valid on click, store the product in local storage
 
 const storeCartLocally = () =>{
     // Get values to add :
@@ -193,11 +200,13 @@ const storeCartLocally = () =>{
     }
     else {
         console.log('4');
-        console.log(quantities);
+        console.log(Number.isInteger(quantities));
     // Check if there is an existing cart and act accordingly
         localStorage.getItem('cart') ? addProductInCart() : addNewProduct();
         testMultipleValues([cart, selectedColor, SELECTED_PRODUCT_ID, quantities]);
         testTypeOfMultipleElements([cart, quantities]);
+
+        setTimeout(() => { alert("Le produit a été ajouté") }, 1000)
 
     // Store the result
         return localStorage.setItem('cart', JSON.stringify(cart));
