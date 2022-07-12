@@ -216,8 +216,8 @@ document.querySelectorAll('[data-id]').forEach(element => {
     let newQuantity; 
     let paragraph = element.querySelector('p:nth-of-type(2)');
     const elementToUpdateInCart = CART.find(element =>  element.id === id && element.color === productColor);
+    let productIndex = CART.indexOf(elementToUpdateInCart);
     element.addEventListener('input', event => {
-        let productIndex = CART.indexOf(elementToUpdateInCart);
         let inputNumber = event.target.value;
         if(!inputNumber || inputNumber>100 || inputNumber<0) {
             inputIsNotValidStyle(event.target);
@@ -239,6 +239,13 @@ document.querySelectorAll('[data-id]').forEach(element => {
             updateTotalQuantityAndPrice(); //Update total price and quantity 
             
         }
+    })
+    let deleteButton = element.querySelector('.cart__item__content__settings__delete');
+    console.log(deleteButton)
+    deleteButton.addEventListener('click', event => {
+        let deleteProductMessage = window.confirm('Souhaitez-vous supprimer ce produit de votre panier ?');
+        deleteProductMessage ? removeProductFromCart(productIndex, productCard) : null;
+        updateTotalQuantityAndPrice();
     })
     let input = element.querySelector('input');
     input.addEventListener('blur', event => {
