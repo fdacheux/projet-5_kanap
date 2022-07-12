@@ -188,37 +188,62 @@ function inputIsNotValidStyle (element) {
 }
 
 function resetInputStyle (element) {
-    element.style.borderColor = "unset";
-    element.style.borderWidth = "unset";
-    element.style.color = "unset";
-    element.style.fontWeight = "unset";    
+    element.removeAttribute('style');   
 }
+
+function removeProductFromLocalStorage (productIndex) {
+    CART.splice(productIndex, 1);
+    return localStorage.setItem('cart', JSON.stringify(CART))
+}
+
+
+function removeProductFromCart(productIndex, productCard) {
+    CART.length > 1 ? removeProductFromLocalStorage (productIndex) : clearCart();
+    return productCard.remove();
+}
+
+function clearCart () {
+    localStorage.clear();
+    CART.splice(0, 1);
+    return document.getElementById('cart__items').textContent = "Votre panier est vide.";
+}
+
 
 document.querySelectorAll('[data-id]').forEach(element => {
     let id = element.dataset.id;
+    let productCard = element;
     let productColor = element.dataset.color;
     let newQuantity; 
     let paragraph = element.querySelector('p:nth-of-type(2)');
     const elementToUpdateInCart = CART.find(element =>  element.id === id && element.color === productColor);
     element.addEventListener('input', event => {
+        let productIndex = CART.indexOf(elementToUpdateInCart);
         let inputNumber = event.target.value;
         if(!inputNumber || inputNumber>100 || inputNumber<0) {
-            inputIsNotValidStyle(event.target)    
+            inputIsNotValidStyle(event.target);
         }
         else {
-            event.target.value = Math.floor(event.target.value);
-            inputIsValidStyle(event.target);
-            newQuantity = event.target.value;
-            event.target.setAttribute('value', `${newQuantity}`); //change value of input for quantity
-            updateQuantityInCart(elementToUpdateInCart, newQuantity);
-            console.log(newQuantity);
-                changePrice(id, newQuantity, paragraph); // change price
-                updateTotalQuantityAndPrice();
+            if(inputNumber==='0'){
+                let deleteProductMessage = window.confirm('Souhaitez-vous supprimer ce produit de votre panier ?');
+                deleteProductMessage ? removeProductFromCart(productIndex, productCard) : event.target.value = 1;
             }
-        })
-    // element.addEventListener('blur', event => {
-    //     event.target.value && event.target.value<100 && event.target.value>1 ? resetInputStyle(event.target) : event.target.focus();
-    // })
+            else {
+                event.target.value = Math.floor(event.target.value);
+                inputIsValidStyle(event.target); // Apply a peculiar style notifying the user that the value is valid
+                newQuantity = event.target.value; // Get the new quantity directly from input area
+                event.target.setAttribute('value', `${newQuantity}`); //change value of input for quantity
+                updateQuantityInCart(elementToUpdateInCart, newQuantity); // Change quantity value in local storage
+                changePrice(id, newQuantity, paragraph); // change displayed price for an element
+            }
+
+            updateTotalQuantityAndPrice(); //Update total price and quantity 
+            
+        }
+    })
+    let input = element.querySelector('input');
+    input.addEventListener('blur', event => {
+        event.target.value && event.target.value<100 && event.target.value>0 ? resetInputStyle(event.target): null; //when blur, if element isn't valid, apply a red style to warn there's an error 
+    })
 });
 
 async function changePrice (id, quantity, paragraph) { //change price depending on quantity 
@@ -234,3 +259,24 @@ async function updateTotalQuantityAndPrice () {
     await getTotalPrice();
 }
 
+
+
+
+/************************* FORM *************************/
+
+//Regex : 
+
+// first name and last-name should not contain numbers but should not be case sensitive either and accepts "-" 
+const NAME_REGEX = /\b([A-ZÀ-ÿ][-a-z. ']+[ ]*)+/g;
+// check specs for adress (should it contains a zip code, a street number ?)
+
+// email has to contain a @ and a "."
+const MAIL_REGEX = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/g  ///^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$\
+
+//Select elements to listen to
+
+// Listening to events : Input -> 
+
+
+
+// Post should not be possible until all elements of cart are valid 
