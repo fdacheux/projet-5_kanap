@@ -21,17 +21,17 @@ const testTypeOfMultipleElements = (array) => {
 // I) GET THE PRODUCT ID TO CREATE API URL :
 
 var parsedUrl = new URL(window.location.href);
-const selectedProductId = parsedUrl.searchParams.get("id"); //Get product ID
-const productApiUrl = `http://localhost:3000/api/products/${selectedProductId}`; //Create URL to access product's properties on API
+const SELECTED_PRODUCT_ID = parsedUrl.searchParams.get("id"); //Get product ID
+const PRODUCT_API_URL = `http://localhost:3000/api/products/${SELECTED_PRODUCT_ID}`; //Create URL to access product's properties on API
 
-//testMultipleValues([selectedProductId, productApiUrl])
+//testMultipleValues([SELECTED_PRODUCT_ID, PRODUCT_API_URL])
 
 
-const colorSelectTag = document.getElementById('colors');
+const COLOR_SELECT_TAG = document.getElementById('colors');
 
 // II) FETCH PRODUCT IN API USING URL + ID
 
-fetch(productApiUrl) 
+fetch(PRODUCT_API_URL) 
 
     //Get product object
     .then(response => response.json())
@@ -40,17 +40,12 @@ fetch(productApiUrl)
     .then(function(data) {
         console.log(data);
 
-        // ÉTAPE 1 : Insert photo  
-        const itemImageBox = document.querySelector('.item__img'); //get node
-        /* console.log(itemImageBox); */
+        // ÉTAPE 1 : Insert photo of product
+        const itemImageBox = document.querySelector('.item__img img'); //get node
 
-        // CREATE IMG TAGS
-        const newImgTag = document.createElement('img'); 
-        newImgTag.src = data.imageUrl;
-        newImgTag.alt = data.altTxt;
-
-        //ADD IMG TAGS
-        itemImageBox.appendChild(newImgTag);
+        // SET ATTRIBUTES FOR IMG TAGS
+        itemImageBox.setAttribute('src', data.imageUrl);
+        itemImageBox.setAttribute('alt', data.altTxt);
 
 
         // ÉTAPE 2 : Insert description elements
@@ -61,18 +56,13 @@ fetch(productApiUrl)
 
         // 3) ÉTAPE 3 : Insert colors options
         let colorsArray = data.colors;   
-
-        /*Check values :
-        // console.log(colorsArray);
-        // console.log(colorSelectElement);*/
         
         //Create new option tags
         for (const element of colorsArray) {
-            const newOptionTag = document.createElement('option');
-            // console.log(newOptionElement);
-            newOptionTag.value = element;
-            newOptionTag.text = element;
-            colorSelectTag.appendChild(newOptionTag);
+            const newOptionTag = document.createElement('option'); // create an option tag for each element in colors property
+            newOptionTag.value = element; // Take color name and add it as value attribute of the option
+            newOptionTag.text = element; // Same but for text
+            COLOR_SELECT_TAG.appendChild(newOptionTag); // Add element inside parent element
         }
 
     })
@@ -108,14 +98,21 @@ const createBoldBorderForElement = (array, colorString) => {
         element.style.borderWidth = '3px';
     }
 }
+let regex = /^[0-9]*$/;
 
-const checkQuantityValidity = () => {
+function checkQuantityValidity () {
     quantities = quantityInput.value;
-    if (quantities <= 100 && quantities>0 && quantities !== null && quantities !== NaN) {
-        addToCartButton.disabled = false;
+    if (quantities <= 100 && quantities>0 && quantities !== null && quantities !== NaN && regex.test(quantities) ) {
+        // addToCartButton.disabled = false;
         createBoldBorderForElement([quantityInput], "green");
         quantityInput.style.color = "green";
         quantityInput.style.fontWeight = "unset";
+    }
+    else if (quantities <= 100 && quantities>0 && quantities !== null && quantities !== NaN && !regex.test(quantities)) {
+        quantityInput.value = Math.floor(quantityInput.value);
+        createBoldBorderForElement([quantityInput], "green");
+        quantityInput.style.color = "green";
+        quantityInput.style.fontWeight = "unset"
     }
     else {
         createBoldBorderForElement([quantityInput], "red");
@@ -126,13 +123,13 @@ const checkQuantityValidity = () => {
 }
 
 quantityInput.addEventListener('blur', function(){
-    if(quantities <= 100 && quantities>0 && quantities !== null && quantities !== NaN){
+    if(quantities <= 100 && quantities>0 && quantities !== null && quantities !== NaN && regex.test(quantities)){
         quantityInput.style = null;
     }
 })
 
-colorSelectTag.addEventListener('click', function() {
-    colorSelectTag.style = null;
+COLOR_SELECT_TAG.addEventListener('click', function() {
+    COLOR_SELECT_TAG.style = null;
 })
     
     
@@ -140,7 +137,7 @@ colorSelectTag.addEventListener('click', function() {
 // Create new product object in array: 
 const addNewProduct = () => {
     let product = {
-        id : selectedProductId,
+        id : SELECTED_PRODUCT_ID,
         quantity : quantities,
         color : selectedColor
     };  
@@ -160,12 +157,12 @@ const addProductInCart = () => {
     for (let i=0; i<cart.length; i++){
         // console.log(`Cart element is ${i} : id : ${cart[i].id}; color : ${cart[i].color}; quantity : ${cart[i].quantity}`);
         Number.parseInt(cart[i].quantity);
-        if (cart[i].id === selectedProductId && cart[i].color === selectedColor && (cart[i].quantity+quantities>100)){
+        if (cart[i].id === SELECTED_PRODUCT_ID && cart[i].color === selectedColor && (cart[i].quantity+quantities>100)){
             alert(`Vous ne pouvez pas mettre plus de 100 unités d\'un même produit dans le panier. Vous pouvez ajouter encore ${differenceBetweenQuantityAndHundred(Number.parseInt(cart[i].quantity))} unités.`);
             quantityInput.value = differenceBetweenQuantityAndHundred(Number.parseInt(cart[i].quantity)); 
             createBoldBorderForElement([quantityInput], "orange");
         }
-        else if(cart[i].id === selectedProductId && cart[i].color === selectedColor) {
+        else if(cart[i].id === SELECTED_PRODUCT_ID && cart[i].color === selectedColor) {
             cart[i].quantity += quantities;
             break
         } 
@@ -177,17 +174,17 @@ const addProductInCart = () => {
 }
 
 
-// If quantity and color is a valid on click, store the product in local storage
+// If quantity and color is valid on click, store the product in local storage
 
 const storeCartLocally = () =>{
     // Get values to add :
-    selectedColor = colorSelectTag.options[colorSelectTag.selectedIndex].value;
+    selectedColor = COLOR_SELECT_TAG.options[COLOR_SELECT_TAG.selectedIndex].value;
     quantities = parseInt(quantityInput.value);  
 
     // Check if they are valid before send, if not warn
     if ((quantities>100 || quantities<=0 || !quantities) && selectedColor.length<1) {
-        colorSelectTag.focus();
-        createBoldBorderForElement([quantityInput, colorSelectTag], "red");
+        COLOR_SELECT_TAG.focus();
+        createBoldBorderForElement([quantityInput, COLOR_SELECT_TAG], "red");
         console.log('1');
     }
     else if (quantities>100 || quantities<=0 || !quantities) {
@@ -197,17 +194,19 @@ const storeCartLocally = () =>{
         quantityInput.value.textContent = "0";
     }
     else if (selectedColor.length<1) {
-        colorSelectTag.focus();
-        createBoldBorderForElement([colorSelectTag], "red");
+        COLOR_SELECT_TAG.focus();
+        createBoldBorderForElement([COLOR_SELECT_TAG], "red");
         console.log('3');
     }
     else {
         console.log('4');
-        console.log(quantities);
+        console.log(Number.isInteger(quantities));
     // Check if there is an existing cart and act accordingly
         localStorage.getItem('cart') ? addProductInCart() : addNewProduct();
-        testMultipleValues([cart, selectedColor, selectedProductId, quantities]);
+        testMultipleValues([cart, selectedColor, SELECTED_PRODUCT_ID, quantities]);
         testTypeOfMultipleElements([cart, quantities]);
+
+        setTimeout(() => { alert("Le produit a été ajouté") }, 1000)
 
     // Store the result
         return localStorage.setItem('cart', JSON.stringify(cart));

@@ -7,7 +7,7 @@ fetch(apiUrl)
   .then(function(data) {
 
     let productArray = data;
-
+    console.log(productArray);
     //use a map to create cards : 
     return productArray.map(function(productArray) {
 
