@@ -24,10 +24,46 @@ var parsedUrl = new URL(window.location.href);
 const SELECTED_PRODUCT_ID = parsedUrl.searchParams.get("id"); //Get product ID
 const PRODUCT_API_URL = `http://localhost:3000/api/products/${SELECTED_PRODUCT_ID}`; //Create URL to access product's properties on API
 
-//testMultipleValues([SELECTED_PRODUCT_ID, PRODUCT_API_URL])
-
-
 const COLOR_SELECT_TAG = document.getElementById('colors');
+
+// Colors translation 
+
+function translateColour (colour) { //take a string (the colour from API) and translate it in French
+    switch(colour) {
+        case "White":
+            return "Blanc";
+        case "Black":
+            return "Noir";
+        case "Blue":
+            return "Bleu";
+        case "Green":
+            return "Vert";
+        case "Red":
+            return "Rouge";
+        case "Orange":
+            return "Orange";
+        case "Pink":
+            return "Rose";
+        case "Grey":
+            return "Gris";
+        case "Purple":
+            return "Violet";
+        case "Navy":
+            return "Bleu marine";
+        case "Silver":
+            return "Argenté";
+        case "Brown":
+            return "Marron";
+        case "Yellow":
+            return "Jaune";
+        case "Black/Yellow":
+            return "Noir/Jaune";
+        case "Black/Red":
+            return "Noir/Rouge";
+        default : 
+            return "Inconnu";        
+    }
+}
 
 // II) FETCH PRODUCT IN API USING URL + ID
 
@@ -38,7 +74,6 @@ fetch(PRODUCT_API_URL)
 
     // Use data when product object has been recovered
     .then(function(data) {
-        console.log(data);
 
         // ÉTAPE 1 : Insert photo of product
         const itemImageBox = document.querySelector('.item__img img'); //get node
@@ -61,7 +96,7 @@ fetch(PRODUCT_API_URL)
         for (const element of colorsArray) {
             const newOptionTag = document.createElement('option'); // create an option tag for each element in colors property
             newOptionTag.value = element; // Take color name and add it as value attribute of the option
-            newOptionTag.text = element; // Same but for text
+            newOptionTag.text = translateColour(element); // Same but for text TRADUCTION
             COLOR_SELECT_TAG.appendChild(newOptionTag); // Add element inside parent element
         }
 
@@ -79,15 +114,13 @@ fetch(PRODUCT_API_URL)
 // Create the cart array 
 var cart = [];
 
+
 // Get button element and quantity input element for later use
 const addToCartButton = document.getElementById('addToCart');
 const quantityInput = document.getElementById('quantity');
 
 let quantities;
 let selectedColor = '';
-
-console.log(addToCartButton);
-
 
 //  Check validity of quantity on keyup event and change style of input depending on validity
 
@@ -98,12 +131,12 @@ const createBoldBorderForElement = (array, colorString) => {
         element.style.borderWidth = '3px';
     }
 }
+
 let regex = /^[0-9]*$/;
 
 function checkQuantityValidity () {
     quantities = quantityInput.value;
     if (quantities <= 100 && quantities>0 && quantities !== null && quantities !== NaN && regex.test(quantities) ) {
-        // addToCartButton.disabled = false;
         createBoldBorderForElement([quantityInput], "green");
         quantityInput.style.color = "green";
         quantityInput.style.fontWeight = "unset";
@@ -118,7 +151,6 @@ function checkQuantityValidity () {
         createBoldBorderForElement([quantityInput], "red");
         quantityInput.style.color = "red";
         quantityInput.style.fontWeight = "bold";
-        // addToCartButton.disabled = true;
     }
 }
 
@@ -152,10 +184,7 @@ const differenceBetweenQuantityAndHundred = (number) => {
 
 const addProductInCart = () => {
     cart = JSON.parse(localStorage.getItem('cart'));
-    // console.log(`Cart is  : ${cart}`);
-    // console.log(selectedColor);
     for (let i=0; i<cart.length; i++){
-        // console.log(`Cart element is ${i} : id : ${cart[i].id}; color : ${cart[i].color}; quantity : ${cart[i].quantity}`);
         Number.parseInt(cart[i].quantity);
         if (cart[i].id === SELECTED_PRODUCT_ID && cart[i].color === selectedColor && (cart[i].quantity+quantities>100)){
             alert(`Vous ne pouvez pas mettre plus de 100 unités d\'un même produit dans le panier. Vous pouvez ajouter encore ${differenceBetweenQuantityAndHundred(Number.parseInt(cart[i].quantity))} unités.`);
@@ -219,9 +248,8 @@ addToCartButton.addEventListener('click', storeCartLocally);
 
 
 function testFinalResult () {
-    let testResult = [];
-    testResult = JSON.parse(localStorage.getItem('cart'));
-    console.log(testResult);
+    let testResult = JSON.parse(localStorage.getItem('cart'));
+    return console.log(testResult);
     
 }
 

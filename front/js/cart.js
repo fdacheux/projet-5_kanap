@@ -8,8 +8,13 @@ const API_URL = "http://localhost:3000/api/products"; //global
 async function fetchAllProducts (API_URL){
     try {
         let response = await fetch(API_URL);
-        let productsArray = await response.json();
-        return productsArray;
+        if (response.ok){
+            let productsArray = await response.json();
+            return productsArray;
+        }
+        else {
+            console.error('Retour du serveur : ', response.status);
+        }
     }
     catch (err) {
         console.error(err.stack);
@@ -22,8 +27,13 @@ async function fetchAllProducts (API_URL){
 async function fetchProduct (id){
     try {
         let response = await fetch(`${API_URL}/${id}`);
-        let productObject = await response.json();
-        return productObject;
+        if(response.ok){
+            let productObject = await response.json();
+            return productObject;
+        }
+        else{
+            console.error('Retour du serveur : ', response.status)
+        }
     }
     catch (err) {
         console.error(err.stack);
@@ -32,8 +42,7 @@ async function fetchProduct (id){
 
 /************************* GET CART CONTENT FROM LOCAL STORAGE *************************/
 
-const CART = JSON.parse(localStorage.getItem('cart'));
-// var cart = localStorage.getItem('cart')?CART:null;
+const CART = localStorage && localStorage.getItem('cart') ? JSON.parse(localStorage.getItem('cart')) : [];
 
 /************************* CREATE CART ON DOM *************************/
 
@@ -42,6 +51,44 @@ const CART = JSON.parse(localStorage.getItem('cart'));
 const CART_ITEMS_CARDS = document.getElementById('cart__items'); //select parent div where clone elements will be added
 const TEMPLATE = document.querySelector("#cart__item-card"); //select template for clone purposes
 
+// Colors translation 
+
+function translateColour (colour) { //take a string (the colour from API) and translate it in French
+    switch(colour) {
+        case "White":
+            return "Blanc";
+        case "Black":
+            return "Noir";
+        case "Blue":
+            return "Bleu";
+        case "Green":
+            return "Vert";
+        case "Red":
+            return "Rouge";
+        case "Orange":
+            return "Orange";
+        case "Pink":
+            return "Rose";
+        case "Grey":
+            return "Gris";
+        case "Purple":
+            return "Violet";
+        case "Navy":
+            return "Bleu marine";
+        case "Silver":
+            return "Argenté";
+        case "Brown":
+            return "Marron";
+        case "Yellow":
+            return "Jaune";
+        case "Black/Yellow":
+            return "Noir/Jaune";
+        case "Black/Red":
+            return "Noir/Rouge";
+        default : 
+            return "Inconnu";        
+    }
+}
 
 // Function that selects a specific card using data-id and data-colour attributes
 const selectProductCard = (id, color) => {
@@ -60,7 +107,7 @@ const cloneProductCardTemplate = () => {
             cartItem.dataset.id = `${element.id}`;
             cartItem.dataset.color = `${element.color}`;
             quantityInput.setAttribute('value', `${element.quantity}`);
-            colorName.textContent = element.color;
+            colorName.textContent = translateColour(element.color); 
             
             CART_ITEMS_CARDS.appendChild(clone);   
 }
@@ -152,26 +199,23 @@ async function getTotalPrice () {
 getTotalPrice();
 
 
-//get elements that need to be listened : 
-
 
 /************************* ADD ELEMENT IN CART FROM CART PAGE *************************/
 
-// Elements to listen
+// Elements to listen to
 let idArray = [];
 for (element of CART){
     idArray.push(element.id);
 }
 
 const ALL_PRODUCTS_ARTICLES = document.querySelectorAll(`[data-id]`);
-console.log(ALL_PRODUCTS_ARTICLES);
+// console.log(ALL_PRODUCTS_ARTICLES);
 
 const updateQuantityInCart = (elementToUpdate, quantity) => {
     elementToUpdate.quantity = parseInt(quantity);
     return localStorage.setItem('cart', JSON.stringify(CART))
 }
 
-let regex = /^[0-9]*$/;
 
 function inputIsValidStyle (element) {
     element.style.borderColor = "green";
@@ -235,13 +279,12 @@ document.querySelectorAll('[data-id]').forEach(element => {
                 updateQuantityInCart(elementToUpdateInCart, newQuantity); // Change quantity value in local storage
                 changePrice(id, newQuantity, paragraph); // change displayed price for an element
             }
-
+            
             updateTotalQuantityAndPrice(); //Update total price and quantity 
             
         }
     })
     let deleteButton = element.querySelector('.cart__item__content__settings__delete');
-    console.log(deleteButton)
     deleteButton.addEventListener('click', event => {
         let deleteProductMessage = window.confirm('Souhaitez-vous supprimer ce produit de votre panier ?');
         deleteProductMessage ? removeProductFromCart(productIndex, productCard) : null;
@@ -262,7 +305,7 @@ async function changePrice (id, quantity, paragraph) { //change price depending 
 async function updateTotalQuantityAndPrice () {
     total = 0;
     totalQuantity = 0;
-    await getTotalQuantity();
+    getTotalQuantity();
     await getTotalPrice();
 }
 
@@ -274,16 +317,251 @@ async function updateTotalQuantityAndPrice () {
 //Regex : 
 
 // first name and last-name should not contain numbers but should not be case sensitive either and accepts "-" 
-const NAME_REGEX = /\b([A-ZÀ-ÿ][-a-z. ']+[ ]*)+/g;
-// check specs for adress (should it contains a zip code, a street number ?)
 
-// email has to contain a @ and a "."
-const MAIL_REGEX = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/g  ///^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$\
+const NAMES_REGEX = /^[A-Za-zÀ-ÿ][a-zÀ-ÿ .'-]*$/i;
+const ADDRESS_FIRST_CHARACTER_REGEX = /^[A-Za-zÀ-ÿ0-9]/
+const MAIL_FIRST_CHARACTER_REGEX = /^[A-Za-z]/
+const NUMBERS_REGEX = /[0-9]/;
+const CONTAIN_INT_REGEX = /\d/;
+const CONTAIN_CONSECUTIVE_SYMBOLS = /[.\-\' \_@]{2}/;
+const CONTAIN_FORBIDDEN_SYMBOLS = /[\!\@\$\%\^\&\*\(\)\,\?\"\:\{\}\|\<\>\=\+\;\/\\]+/;
+const MAIL_FORBIDDEN_SPECIAL_CHARACTERS = /[^\w\@\.\-]+/;
+const ADDRESS_REGEX = /[^\w\d\[À-ÿ],\-\'\ ]+|[_]+/
+const MAIL_REGEX = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 
 //Select elements to listen to
 
 // Listening to events : Input -> 
 
+const FIRST_NAME_INPUT = document.getElementById('firstName');
+const FIRST_NAME_ERROR_MESSAGE = document.getElementById('firstNameErrorMsg');
+const LAST_NAME_INPUT = document.getElementById('lastName');
+const LAST_NAME_ERROR_MESSAGE = document.getElementById('lastNameErrorMsg');
+const ADDRESS_INPUT = document.getElementById('address');
+const ADDRESS_ERROR_MESSAGE = document.getElementById('addressErrorMsg');
+const CITY_INPUT = document.getElementById('city');
+const CITY_ERROR_MESSAGE = document.getElementById('cityErrorMsg');
+const EMAIL_INPUT = document.getElementById('email');
+const EMAIL_ERROR_MESSAGE = document.getElementById('emailErrorMsg');
+const ORDER_BUTTON = document.getElementById('order');
+const FORM = document.getElementsByClassName('cart__order__form')[0];
 
+function isValid (regex, value) {
+    return regex.test(value);
+}
+
+// A function to indicate an error in an input depending on regex. It takes the name of the tested element, an html element to display the error, a string indicating which element
+// is invalid inside the error message.
+function nameErrors (element, messageBox, dataString) { 
+    let isTrue = true;
+    element.style.border = "red solid 3px";
+    switch(isTrue) {
+        case CONTAIN_INT_REGEX.test(element.value) : 
+            messageBox.textContent = `${dataString} ne doit pas contenir de chiffres.`;
+            break;
+        case CONTAIN_CONSECUTIVE_SYMBOLS.test(element.value) :
+            messageBox.textContent = `${dataString} ne doit pas contenir deux symboles \" \' \", \" - \" , ou deux espaces consécutifs.`;
+            break;
+        default : 
+            messageBox.textContent = `${dataString} doit commencer par une lettre, et ne peut contenir que des lettres, les symboles \" - \" , \" ' \" , et des espaces.`;
+    }
+}
+
+
+
+FIRST_NAME_INPUT.addEventListener('keyup', event => {
+    if(event.target.value === ""){
+        FIRST_NAME_ERROR_MESSAGE.textContent = "";
+        resetInputStyle(event.target);  
+    }
+    else if(!NAMES_REGEX.test(event.target.value) || CONTAIN_INT_REGEX.test(event.target.value) || CONTAIN_CONSECUTIVE_SYMBOLS.test(event.target.value)){
+        nameErrors(event.target, FIRST_NAME_ERROR_MESSAGE, "Le prénom");
+    }
+    else {
+        event.target.style.border = "green 3px solid";
+        FIRST_NAME_ERROR_MESSAGE.textContent = "";
+    }
+})
+
+FIRST_NAME_INPUT.addEventListener('blur', event => {
+    if(NAMES_REGEX.test(event.target.value) && !CONTAIN_CONSECUTIVE_SYMBOLS.test(event.target.value)){
+        resetInputStyle(event.target);
+    }
+});
+
+function onInputTextChange(event, onEmpty, onSucess, onError){
+    if(event.target.value === "") {
+        onEmpty(event);
+    }
+    else if(!NAMES_REGEX.test(event.target.value) || CONTAIN_INT_REGEX.test(event.target.value) || CONTAIN_CONSECUTIVE_SYMBOLS.test(event.target.value)){
+       onError(event)
+    }
+    else {
+       onSucess(event)
+    }
+}
+
+function onLastNameSuccess(event){
+    event.target.style.border = "green 3px solid";
+    LAST_NAME_ERROR_MESSAGE.textContent = "";
+}
+
+function onLastNameEmpty(event){
+    LAST_NAME_ERROR_MESSAGE.textContent = "";
+    resetInputStyle(event.target);
+}
+
+function onLastNameSyntaxError(event){
+    nameErrors(event.target, LAST_NAME_ERROR_MESSAGE, "Le nom");
+}
+
+LAST_NAME_INPUT.addEventListener('keyup', event => onInputTextChange(event, onLastNameEmpty,onLastNameSuccess, onLastNameSyntaxError));
+
+LAST_NAME_INPUT.addEventListener('blur', event => {
+    if(NAMES_REGEX.test(event.target.value) && !CONTAIN_CONSECUTIVE_SYMBOLS.test(event.target.value)){
+        resetInputStyle(event.target);
+    }
+});
+
+CITY_INPUT.addEventListener('keyup', event => {
+    if(event.target.value === "") {
+        CITY_ERROR_MESSAGE.textContent = "";
+        resetInputStyle(event.target);  
+    }
+    else if(!NAMES_REGEX.test(event.target.value) || CONTAIN_INT_REGEX.test(event.target.value) || CONTAIN_CONSECUTIVE_SYMBOLS.test(event.target.value)){
+        nameErrors(event.target, CITY_ERROR_MESSAGE, "La ville");
+    }
+    else {
+        event.target.style.border = "green 3px solid";
+        CITY_ERROR_MESSAGE.textContent = "";
+    }
+})
+
+CITY_INPUT.addEventListener('blur', event => {
+    if(NAMES_REGEX.test(event.target.value) && !CONTAIN_CONSECUTIVE_SYMBOLS.test(event.target.value)){
+        resetInputStyle(event.target);
+    }
+});
+
+
+ADDRESS_INPUT.addEventListener('keyup', event => {
+    let target = event?.target;
+    let value = target?.value;
+
+    if (value === "") {
+        ADDRESS_ERROR_MESSAGE.textContent = "";
+        resetInputStyle(event.target);  
+    }
+    else if(!ADDRESS_FIRST_CHARACTER_REGEX.test(value)){
+        ADDRESS_ERROR_MESSAGE.textContent = "L'adresse doit commencer par une lettre ou un chiffre.";
+        target.style.border = "red solid 3px";    
+    }
+    else if(CONTAIN_FORBIDDEN_SYMBOLS.test(value)){
+        ADDRESS_ERROR_MESSAGE.textContent = "L'adresse ne doit pas contenir d'autres symboles que \" \' \", \" - \" ou des espaces.";
+        target.style.border = "red solid 3px";
+    }
+    else if(CONTAIN_CONSECUTIVE_SYMBOLS.test(value)){
+        ADDRESS_ERROR_MESSAGE.textContent = "L'adresse ne doit pas contenir deux symboles \" \' \", \" - \" , ou deux espaces consécutifs.`";
+        target.style.border = "red solid 3px";
+    }
+    else {
+        ADDRESS_ERROR_MESSAGE.textContent = "";
+        target.style.border = "green 3px solid";        
+    }
+})
+
+ADDRESS_INPUT.addEventListener('blur', event => {
+    if(ADDRESS_FIRST_CHARACTER_REGEX.test(event.target.value) && !CONTAIN_CONSECUTIVE_SYMBOLS.test(event.target.value) && !CONTAIN_FORBIDDEN_SYMBOLS.test(event.target.value)){
+        resetInputStyle(event.target);
+    }
+});
+
+EMAIL_INPUT.addEventListener('keyup', event => {
+    if (event.target.value === "") {
+        EMAIL_ERROR_MESSAGE.textContent = "";
+        resetInputStyle(event.target);  
+    }
+    else if(!MAIL_FIRST_CHARACTER_REGEX.test(event.target.value)){
+        EMAIL_ERROR_MESSAGE.textContent = "L'email doit commencer par une lettre (non acctentuée).";
+        event.target.style.border = "red solid 3px";        
+    }
+    else if(MAIL_FORBIDDEN_SPECIAL_CHARACTERS.test(event.target.value)){
+        EMAIL_ERROR_MESSAGE.textContent = "L'email ne peut contenir que les caractères spéciaux suivants : \"@\" , \"-\" , \"_\"  et \".\"  et ne peut pas contenir de lettres accentuées.";
+        event.target.style.border = "red solid 3px";
+    }
+    else if(CONTAIN_CONSECUTIVE_SYMBOLS.test(event.target.value)){
+        EMAIL_ERROR_MESSAGE.textContent = "L'email ne doit pas contenir deux caractères spéciaux consécutifs.";
+        event.target.style.border = "red solid 3px";
+    }
+    else if(/(\w*@\w*){2,}/.test(event.target.value)){
+        EMAIL_ERROR_MESSAGE.textContent = "L'email ne doit pas contenir plus d'un signe @.";
+        event.target.style.border = "red solid 3px";
+    }
+    else {
+        EMAIL_ERROR_MESSAGE.textContent = "";
+        event.target.style.border = "green 3px solid";        
+    }
+})
 
 // Post should not be possible until all elements of cart are valid 
+function OrderForm (firstName, lastName, address, city, email) {
+    this.firstName = firstName;
+    this.lastName = lastName;
+    this.address = address;
+    this.city = city;
+    this.email = email;
+  }
+
+FORM.addEventListener('submit', async event => {
+    let namesRegexCondition = !NAMES_REGEX.test(FIRST_NAME_INPUT.value) || !NAMES_REGEX.test(LAST_NAME_INPUT.value) || !NAMES_REGEX.test(CITY_INPUT.value);
+    let inputsConsecutiveSymbolsCondition = CONTAIN_CONSECUTIVE_SYMBOLS.test(FIRST_NAME_INPUT.value) || CONTAIN_CONSECUTIVE_SYMBOLS.test(LAST_NAME_INPUT.value) || CONTAIN_CONSECUTIVE_SYMBOLS.test(ADDRESS_INPUT.value) || CONTAIN_CONSECUTIVE_SYMBOLS.test(CITY_INPUT.value) || CONTAIN_CONSECUTIVE_SYMBOLS.test(EMAIL_INPUT.value);
+    if(namesRegexCondition) {
+        event.preventDefault();
+    }
+    else if (inputsConsecutiveSymbolsCondition) {
+        event.preventDefault();
+    }
+    else if (!MAIL_REGEX.test(EMAIL_INPUT.value)){
+        event.preventDefault(); 
+    }
+    else if(ADDRESS_REGEX.test(ADDRESS_INPUT.value)||!ADDRESS_FIRST_CHARACTER_REGEX.test(ADDRESS_INPUT.value)){
+        event.preventDefault();
+    }
+    else{
+        event.preventDefault();
+        let form = new OrderForm(FIRST_NAME_INPUT.value, LAST_NAME_INPUT.value, ADDRESS_INPUT.value, CITY_INPUT.value, EMAIL_INPUT.value);
+        const result = await submitForm(form);
+
+        if(result && result.orderId){
+            window.location.href = `/front/html/confirmation.html?orderId=${result.orderId}`;
+            localStorage.clear();
+        }else{
+            console.error('Pas de retour du serveur')
+        }
+    }
+})
+
+async function submitForm (contact) {
+    const products = CART.map((product)=> product.id);
+
+    try{
+        let response = await fetch("http://localhost:3000/api/products/order", {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json', 
+                'Content-Type' : 'application/json'
+            },
+            body: JSON.stringify({products, contact}),
+        })
+        if(response.ok){
+            return response.json();
+        }
+        else{
+            console.error('Retour du serveur : ', response.status)
+        }
+    }
+    catch (err) {
+        console.error(err.stack);
+    }
+}
+
