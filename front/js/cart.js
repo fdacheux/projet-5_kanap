@@ -176,8 +176,6 @@ const getTotalQuantity = () => {
 
 getTotalQuantity()
 
-// const TOTAL_QUANTITY = quantitiesArray.reduce((previousValue, currentValue) => previousValue + currentValue, 0); // Calculate total quantity
-
 // B) Calculate total of all prices 
 
 let total = 0; // total of all prices 
@@ -203,13 +201,12 @@ getTotalPrice();
 /************************* ADD ELEMENT IN CART FROM CART PAGE *************************/
 
 // Elements to listen to
-let idArray = [];
-for (element of CART){
-    idArray.push(element.id);
-}
+// let idArray = [];
+// for (element of CART){
+//     idArray.push(element.id);
+// }
 
 const ALL_PRODUCTS_ARTICLES = document.querySelectorAll(`[data-id]`);
-// console.log(ALL_PRODUCTS_ARTICLES);
 
 const updateQuantityInCart = (elementToUpdate, quantity) => {
     elementToUpdate.quantity = parseInt(quantity);
@@ -218,17 +215,19 @@ const updateQuantityInCart = (elementToUpdate, quantity) => {
 
 
 function inputIsValidStyle (element) {
-    element.style.borderColor = "green";
-    element.style.borderWidth = "3px";
-    element.style.color = "green";
-    element.style.fontWeight = "unset"; 
+    let style = element?.style;
+    style.borderColor = "green";
+    style.borderWidth = "3px";
+    style.color = "green";
+    style.fontWeight = "unset"; 
 }
 
 function inputIsNotValidStyle (element) {
-    element.style.borderColor = "red";
-    element.style.borderWidth = "3px";
-    element.style.color = "red";
-    element.style.fontWeight = "bold"; 
+    let style = element?.style;
+    style.borderColor = "red";
+    style.borderWidth = "3px";
+    style.color = "red";
+    style.fontWeight = "bold"; 
 }
 
 function resetInputStyle (element) {
@@ -253,29 +252,31 @@ function clearCart () {
 }
 
 
-document.querySelectorAll('[data-id]').forEach(element => {
-    let id = element.dataset.id;
-    let productCard = element;
-    let productColor = element.dataset.color;
+document.querySelectorAll('[data-id]').forEach(productCard => {
+    let dataSet = productCard?.dataset;
+    let id = dataSet?.id;
+    let productColor = dataSet?.color;
     let newQuantity; 
-    let paragraph = element.querySelector('p:nth-of-type(2)');
+    let paragraph = productCard?.querySelector('p:nth-of-type(2)');
     const elementToUpdateInCart = CART.find(element =>  element.id === id && element.color === productColor);
     let productIndex = CART.indexOf(elementToUpdateInCart);
-    element.addEventListener('input', event => {
-        let inputNumber = event.target.value;
+    productCard?.addEventListener('input', event => {
+        let target = event?.target;
+        let value = target?.value;
+        let inputNumber = value;
         if(!inputNumber || inputNumber>100 || inputNumber<0) {
-            inputIsNotValidStyle(event.target);
+            inputIsNotValidStyle(target);
         }
         else {
             if(inputNumber==='0'){
                 let deleteProductMessage = window.confirm('Souhaitez-vous supprimer ce produit de votre panier ?');
-                deleteProductMessage ? removeProductFromCart(productIndex, productCard) : event.target.value = 1;
+                deleteProductMessage ? removeProductFromCart(productIndex, productCard) : value = 1;
             }
             else {
-                event.target.value = Math.floor(event.target.value);
-                inputIsValidStyle(event.target); // Apply a peculiar style notifying the user that the value is valid
-                newQuantity = event.target.value; // Get the new quantity directly from input area
-                event.target.setAttribute('value', `${newQuantity}`); //change value of input for quantity
+                value = Math.floor(value);
+                inputIsValidStyle(target); // Apply a peculiar style notifying the user that the value is valid
+                newQuantity = value; // Get the new quantity directly from input area
+                target.setAttribute('value', `${newQuantity}`); //change value of input for quantity
                 updateQuantityInCart(elementToUpdateInCart, newQuantity); // Change quantity value in local storage
                 changePrice(id, newQuantity, paragraph); // change displayed price for an element
             }
@@ -284,15 +285,18 @@ document.querySelectorAll('[data-id]').forEach(element => {
             
         }
     })
-    let deleteButton = element.querySelector('.cart__item__content__settings__delete');
+
+    let deleteButton = productCard.querySelector('.cart__item__content__settings__delete');
     deleteButton.addEventListener('click', event => {
         let deleteProductMessage = window.confirm('Souhaitez-vous supprimer ce produit de votre panier ?');
         deleteProductMessage ? removeProductFromCart(productIndex, productCard) : null;
         updateTotalQuantityAndPrice();
     })
-    let input = element.querySelector('input');
+    let input = productCard.querySelector('input');
     input.addEventListener('blur', event => {
-        event.target.value && event.target.value<100 && event.target.value>0 ? resetInputStyle(event.target): null; //when blur, if element isn't valid, apply a red style to warn there's an error 
+        let target = event?.target;
+        let value = target?.value;
+        value && value<100 && value>0 ? resetInputStyle(target): null; //when blur, if element isn't valid, apply a red style to warn there's an error 
     })
 });
 
@@ -346,9 +350,7 @@ const EMAIL_ERROR_MESSAGE = document.getElementById('emailErrorMsg');
 const ORDER_BUTTON = document.getElementById('order');
 const FORM = document.getElementsByClassName('cart__order__form')[0];
 
-function isValid (regex, value) {
-    return regex.test(value);
-}
+
 
 // A function to indicate an error in an input depending on regex. It takes the name of the tested element, an html element to display the error, a string indicating which element
 // is invalid inside the error message.
@@ -367,39 +369,45 @@ function nameErrors (element, messageBox, dataString) {
     }
 }
 
-
-
-FIRST_NAME_INPUT.addEventListener('keyup', event => {
-    if(event.target.value === ""){
-        FIRST_NAME_ERROR_MESSAGE.textContent = "";
-        resetInputStyle(event.target);  
-    }
-    else if(!NAMES_REGEX.test(event.target.value) || CONTAIN_INT_REGEX.test(event.target.value) || CONTAIN_CONSECUTIVE_SYMBOLS.test(event.target.value)){
-        nameErrors(event.target, FIRST_NAME_ERROR_MESSAGE, "Le prénom");
-    }
-    else {
-        event.target.style.border = "green 3px solid";
-        FIRST_NAME_ERROR_MESSAGE.textContent = "";
-    }
-})
-
-FIRST_NAME_INPUT.addEventListener('blur', event => {
-    if(NAMES_REGEX.test(event.target.value) && !CONTAIN_CONSECUTIVE_SYMBOLS.test(event.target.value)){
-        resetInputStyle(event.target);
-    }
-});
-
 function onInputTextChange(event, onEmpty, onSucess, onError){
-    if(event.target.value === "") {
+    let target = event?.target;
+    let value = target?.value;
+    if(value === "") {
         onEmpty(event);
     }
-    else if(!NAMES_REGEX.test(event.target.value) || CONTAIN_INT_REGEX.test(event.target.value) || CONTAIN_CONSECUTIVE_SYMBOLS.test(event.target.value)){
+    else if(!NAMES_REGEX.test(value) || CONTAIN_INT_REGEX.test(value) || CONTAIN_CONSECUTIVE_SYMBOLS.test(value)){
        onError(event)
     }
     else {
-       onSucess(event)
+       onSucess(event);
     }
 }
+
+
+function onBlurResetNamesInputsStyle(event) {
+	let target = event?.target;
+    	let value = target?.value;
+    	if(NAMES_REGEX.test(value) && !CONTAIN_CONSECUTIVE_SYMBOLS.test(value)){
+        resetInputStyle(target);
+    }
+};
+
+function onFirstNameSuccess(event){
+    FIRST_NAME_ERROR_MESSAGE.textContent = "";
+    event.target.style.border = "green 3px solid";
+}
+
+function onFirstNameEmpty(event){
+    FIRST_NAME_ERROR_MESSAGE.textContent = "";
+    resetInputStyle(event.target);
+}
+
+function onFirstNameSyntaxError(event){
+    nameErrors(event.target, FIRST_NAME_ERROR_MESSAGE, "Le prénom");
+}
+
+FIRST_NAME_INPUT.addEventListener('keyup', event => onInputTextChange(event, onFirstNameEmpty,onFirstNameSuccess, onFirstNameSyntaxError));
+FIRST_NAME_INPUT.addEventListener('blur', event => onBlurResetNamesInputsStyle(event));
 
 function onLastNameSuccess(event){
     event.target.style.border = "green 3px solid";
@@ -416,92 +424,99 @@ function onLastNameSyntaxError(event){
 }
 
 LAST_NAME_INPUT.addEventListener('keyup', event => onInputTextChange(event, onLastNameEmpty,onLastNameSuccess, onLastNameSyntaxError));
+LAST_NAME_INPUT.addEventListener('blur', event => onBlurResetNamesInputsStyle(event));
 
-LAST_NAME_INPUT.addEventListener('blur', event => {
-    if(NAMES_REGEX.test(event.target.value) && !CONTAIN_CONSECUTIVE_SYMBOLS.test(event.target.value)){
-        resetInputStyle(event.target);
-    }
-});
+function onCitySuccess(event){
+    event.target.style.border = "green 3px solid";
+    CITY_ERROR_MESSAGE.textContent = "";
+}
 
-CITY_INPUT.addEventListener('keyup', event => {
-    if(event.target.value === "") {
-        CITY_ERROR_MESSAGE.textContent = "";
-        resetInputStyle(event.target);  
-    }
-    else if(!NAMES_REGEX.test(event.target.value) || CONTAIN_INT_REGEX.test(event.target.value) || CONTAIN_CONSECUTIVE_SYMBOLS.test(event.target.value)){
-        nameErrors(event.target, CITY_ERROR_MESSAGE, "La ville");
-    }
-    else {
-        event.target.style.border = "green 3px solid";
-        CITY_ERROR_MESSAGE.textContent = "";
-    }
-})
+function onCityEmpty(event){
+    CITY_ERROR_MESSAGE.textContent = "";
+    resetInputStyle(event.target);
+}
 
-CITY_INPUT.addEventListener('blur', event => {
-    if(NAMES_REGEX.test(event.target.value) && !CONTAIN_CONSECUTIVE_SYMBOLS.test(event.target.value)){
-        resetInputStyle(event.target);
-    }
-});
+function onCitySyntaxError(event){
+    nameErrors(event.target, CITY_ERROR_MESSAGE, "Le nom de ville");
+}
+
+CITY_INPUT.addEventListener('keyup', event => onInputTextChange(event, onCityEmpty, onCitySuccess, onCitySyntaxError));
+CITY_INPUT.addEventListener('blur', event => onBlurResetNamesInputsStyle(event));
 
 
 ADDRESS_INPUT.addEventListener('keyup', event => {
     let target = event?.target;
     let value = target?.value;
+    let style = target?.style;
 
     if (value === "") {
         ADDRESS_ERROR_MESSAGE.textContent = "";
-        resetInputStyle(event.target);  
+        resetInputStyle(target);  
     }
     else if(!ADDRESS_FIRST_CHARACTER_REGEX.test(value)){
         ADDRESS_ERROR_MESSAGE.textContent = "L'adresse doit commencer par une lettre ou un chiffre.";
-        target.style.border = "red solid 3px";    
+        style.border = "red solid 3px";    
     }
     else if(CONTAIN_FORBIDDEN_SYMBOLS.test(value)){
         ADDRESS_ERROR_MESSAGE.textContent = "L'adresse ne doit pas contenir d'autres symboles que \" \' \", \" - \" ou des espaces.";
-        target.style.border = "red solid 3px";
+        style.border = "red solid 3px";
     }
     else if(CONTAIN_CONSECUTIVE_SYMBOLS.test(value)){
         ADDRESS_ERROR_MESSAGE.textContent = "L'adresse ne doit pas contenir deux symboles \" \' \", \" - \" , ou deux espaces consécutifs.`";
-        target.style.border = "red solid 3px";
+        style.border = "red solid 3px";
     }
     else {
         ADDRESS_ERROR_MESSAGE.textContent = "";
-        target.style.border = "green 3px solid";        
+        style.border = "green 3px solid";        
     }
 })
 
 ADDRESS_INPUT.addEventListener('blur', event => {
-    if(ADDRESS_FIRST_CHARACTER_REGEX.test(event.target.value) && !CONTAIN_CONSECUTIVE_SYMBOLS.test(event.target.value) && !CONTAIN_FORBIDDEN_SYMBOLS.test(event.target.value)){
-        resetInputStyle(event.target);
+    let target = event?.target;
+    let value = target?.value;
+    if(ADDRESS_FIRST_CHARACTER_REGEX.test(value) && !CONTAIN_CONSECUTIVE_SYMBOLS.test(value) && !CONTAIN_FORBIDDEN_SYMBOLS.test(value)){
+        resetInputStyle(target);
     }
 });
 
 EMAIL_INPUT.addEventListener('keyup', event => {
-    if (event.target.value === "") {
+    let target = event?.target;
+    let value = target?.value;
+    let style = target?.style;
+
+    if (value === "") {
         EMAIL_ERROR_MESSAGE.textContent = "";
-        resetInputStyle(event.target);  
+        resetInputStyle(target);  
     }
-    else if(!MAIL_FIRST_CHARACTER_REGEX.test(event.target.value)){
+    else if(!MAIL_FIRST_CHARACTER_REGEX.test(value)){
         EMAIL_ERROR_MESSAGE.textContent = "L'email doit commencer par une lettre (non acctentuée).";
-        event.target.style.border = "red solid 3px";        
+        style.border = "red solid 3px";        
     }
-    else if(MAIL_FORBIDDEN_SPECIAL_CHARACTERS.test(event.target.value)){
+    else if(MAIL_FORBIDDEN_SPECIAL_CHARACTERS.test(value)){
         EMAIL_ERROR_MESSAGE.textContent = "L'email ne peut contenir que les caractères spéciaux suivants : \"@\" , \"-\" , \"_\"  et \".\"  et ne peut pas contenir de lettres accentuées.";
-        event.target.style.border = "red solid 3px";
+        style.border = "red solid 3px";
     }
-    else if(CONTAIN_CONSECUTIVE_SYMBOLS.test(event.target.value)){
+    else if(CONTAIN_CONSECUTIVE_SYMBOLS.test(value)){
         EMAIL_ERROR_MESSAGE.textContent = "L'email ne doit pas contenir deux caractères spéciaux consécutifs.";
-        event.target.style.border = "red solid 3px";
+        style.border = "red solid 3px";
     }
-    else if(/(\w*@\w*){2,}/.test(event.target.value)){
+    else if(/(\w*@\w*){2,}/.test(value)){
         EMAIL_ERROR_MESSAGE.textContent = "L'email ne doit pas contenir plus d'un signe @.";
-        event.target.style.border = "red solid 3px";
+        style.border = "red solid 3px";
     }
     else {
         EMAIL_ERROR_MESSAGE.textContent = "";
-        event.target.style.border = "green 3px solid";        
+        style.border = "green 3px solid";        
     }
 })
+
+EMAIL_INPUT.addEventListener('blur', event => {
+    let target = event?.target;
+    let value = target?.value;
+    if(!CONTAIN_CONSECUTIVE_SYMBOLS.test(value) && MAIL_REGEX.test(value)){
+        resetInputStyle(target);
+    }
+});
 
 // Post should not be possible until all elements of cart are valid 
 function OrderForm (firstName, lastName, address, city, email) {

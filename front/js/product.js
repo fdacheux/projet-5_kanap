@@ -1,21 +1,3 @@
-// Debug functions
-
-//Function to check multiple values of variables
-const testMultipleValues = (array) => {
-    for (e of array) {
-        console.log(e)
-    }   
-}
-// Function to test type of multiple variables 
-const testTypeOfMultipleElements = (array) => {
-    for (e of array) {
-        console.log(typeof(e));
-    }   
-}
-
-
-
-
 /* ----------------------- Fetch API info ----------------------- */ 
 
 // I) GET THE PRODUCT ID TO CREATE API URL :
@@ -70,36 +52,40 @@ function translateColour (colour) { //take a string (the colour from API) and tr
 fetch(PRODUCT_API_URL) 
 
     //Get product object
-    .then(response => response.json())
-
-    // Use data when product object has been recovered
-    .then(function(data) {
-
-        // ÉTAPE 1 : Insert photo of product
-        const itemImageBox = document.querySelector('.item__img img'); //get node
-
-        // SET ATTRIBUTES FOR IMG TAGS
-        itemImageBox.setAttribute('src', data.imageUrl);
-        itemImageBox.setAttribute('alt', data.altTxt);
-
-
-        // ÉTAPE 2 : Insert description elements
-        document.getElementById('title').textContent = data.name;
-        document.getElementById('price').textContent = data.price;
-        document.getElementById('description').textContent = data.description;
-
-
-        // 3) ÉTAPE 3 : Insert colors options
-        let colorsArray = data.colors;   
+    .then(response => {
+        if(response.ok){
+            response.json().then(function(data) {
+                const {imageUrl, altTxt, name, price, description, colors} = {...data}
+                // ÉTAPE 1 : Insert photo of product
+                const itemImageBox = document.querySelector('.item__img img'); //get node
         
-        //Create new option tags
-        for (const element of colorsArray) {
-            const newOptionTag = document.createElement('option'); // create an option tag for each element in colors property
-            newOptionTag.value = element; // Take color name and add it as value attribute of the option
-            newOptionTag.text = translateColour(element); // Same but for text TRADUCTION
-            COLOR_SELECT_TAG.appendChild(newOptionTag); // Add element inside parent element
+                // SET ATTRIBUTES FOR IMG TAGS
+                itemImageBox?.setAttribute('src', imageUrl);
+                itemImageBox?.setAttribute('alt', altTxt);
+        
+        
+                // ÉTAPE 2 : Insert description elements
+                document.getElementById('title').textContent = name;
+                document.getElementById('price').textContent = price;
+                document.getElementById('description').textContent = description;
+        
+        
+                // 3) ÉTAPE 3 : Insert colors options
+                let colorsArray = colors;   
+                
+                //Create new option tags
+                for (const element of colorsArray) {
+                    const newOptionTag = document.createElement('option'); // create an option tag for each element in colors property
+                    newOptionTag.value = element; // Take color name and add it as value attribute of the option
+                    newOptionTag.text = translateColour(element); // Same but for text TRADUCTION
+                    COLOR_SELECT_TAG.appendChild(newOptionTag); // Add element inside parent element
+                }
+            
+            })
         }
-
+        else {
+            console.error('Retour du serveur : ', response.status)
+        }
     })
     //Catch error to keep app running, get error specifications on console
     .catch(err => console.error(err.stack));
@@ -112,7 +98,7 @@ fetch(PRODUCT_API_URL)
 // I) CREATE SOME ELEMENTS FOR FURTHER USE
 
 // Create the cart array 
-var cart = [];
+const CART = localStorage && localStorage.getItem('cart') ? JSON.parse(localStorage.getItem('cart')) : [];
 
 
 // Get button element and quantity input element for later use
@@ -154,6 +140,10 @@ function checkQuantityValidity () {
     }
 }
 
+quantityInput.addEventListener('keyup', function(){
+    checkQuantityValidity();
+});
+
 quantityInput.addEventListener('blur', function(){
     if(quantities <= 100 && quantities>0 && quantities !== null && quantities !== NaN && regex.test(quantities)){
         quantityInput.style = null;
@@ -173,7 +163,7 @@ const addNewProduct = () => {
         quantity : quantities,
         color : selectedColor
     };  
-    cart.push(product);
+    CART.push(product);
 }
 
 const differenceBetweenQuantityAndHundred = (number) => {
@@ -183,25 +173,32 @@ const differenceBetweenQuantityAndHundred = (number) => {
 // Action to take depending on presence of product in cart (either add a new product or increase quantity property of one of them)
 
 const addProductInCart = () => {
-    cart = JSON.parse(localStorage.getItem('cart'));
-    for (let i=0; i<cart.length; i++){
-        Number.parseInt(cart[i].quantity);
-        if (cart[i].id === SELECTED_PRODUCT_ID && cart[i].color === selectedColor && (cart[i].quantity+quantities>100)){
-            alert(`Vous ne pouvez pas mettre plus de 100 unités d\'un même produit dans le panier. Vous pouvez ajouter encore ${differenceBetweenQuantityAndHundred(Number.parseInt(cart[i].quantity))} unités.`);
-            quantityInput.value = differenceBetweenQuantityAndHundred(Number.parseInt(cart[i].quantity)); 
-            createBoldBorderForElement([quantityInput], "orange");
-        }
-        else if(cart[i].id === SELECTED_PRODUCT_ID && cart[i].color === selectedColor) {
-            cart[i].quantity += quantities;
+    for (let i=0; i<CART.length; i++){
+        Number.parseInt(CART[i].quantity);
+        if(CART[i].id === SELECTED_PRODUCT_ID && CART[i].color === selectedColor) {
+            CART[i].quantity += quantities;
             break
         } 
-        else if (i===cart.length-1){
+        else if (i===CART.length-1){
             addNewProduct();
             break
         }   
     }
 }
 
+const isTotalQuantityIsUnderHundred = () => {
+    let success = true;
+    for (let i=0; i<CART.length; i++){
+        Number.parseInt(CART[i].quantity);
+        if (CART[i].id === SELECTED_PRODUCT_ID && CART[i].color === selectedColor && (CART[i].quantity+quantities>100)){
+            alert(`Vous ne pouvez pas mettre plus de 100 unités d\'un même produit dans le panier. Vous pouvez ajouter encore ${differenceBetweenQuantityAndHundred(Number.parseInt(CART[i].quantity))} unités.`);
+            quantityInput.value = differenceBetweenQuantityAndHundred(Number.parseInt(CART[i].quantity)); 
+            createBoldBorderForElement([quantityInput], "orange");
+            success = false;
+        }
+    }
+    return success;
+}
 
 // If quantity and color is valid on click, store the product in local storage
 
@@ -214,10 +211,8 @@ const storeCartLocally = () =>{
     if ((quantities>100 || quantities<=0 || !quantities) && selectedColor.length<1) {
         COLOR_SELECT_TAG.focus();
         createBoldBorderForElement([quantityInput, COLOR_SELECT_TAG], "red");
-        console.log('1');
     }
     else if (quantities>100 || quantities<=0 || !quantities) {
-        console.log('2');
         quantityInput.focus(); 
         createBoldBorderForElement([quantityInput], "red");
         quantityInput.value.textContent = "0";
@@ -225,32 +220,15 @@ const storeCartLocally = () =>{
     else if (selectedColor.length<1) {
         COLOR_SELECT_TAG.focus();
         createBoldBorderForElement([COLOR_SELECT_TAG], "red");
-        console.log('3');
     }
-    else {
-        console.log('4');
-        console.log(Number.isInteger(quantities));
+    else if (isTotalQuantityIsUnderHundred()){
     // Check if there is an existing cart and act accordingly
         localStorage.getItem('cart') ? addProductInCart() : addNewProduct();
-        testMultipleValues([cart, selectedColor, SELECTED_PRODUCT_ID, quantities]);
-        testTypeOfMultipleElements([cart, quantities]);
-
-        setTimeout(() => { alert("Le produit a été ajouté") }, 1000)
+        alert("Le produit a été ajouté");
 
     // Store the result
-        return localStorage.setItem('cart', JSON.stringify(cart));
+        return localStorage.setItem('cart', JSON.stringify(CART));
     }
 }
 
-
 addToCartButton.addEventListener('click', storeCartLocally);
-
-
-
-function testFinalResult () {
-    let testResult = JSON.parse(localStorage.getItem('cart'));
-    return console.log(testResult);
-    
-}
-
-addToCartButton.addEventListener('click', testFinalResult);

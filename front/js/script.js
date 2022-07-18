@@ -24,9 +24,9 @@ fetch(apiUrl)
           let productDescription = clone.querySelector('.productDescription');
     
         // Inject the API elements inside the clones
-          itemLink.setAttribute ("href",`./product.html?id=${productArray._id}`);
-          itemImage.setAttribute ("src", `${productArray.imageUrl}`);
-          itemImage.setAttribute ("alt", `${productArray.altTxt}`);
+          itemLink?.setAttribute ("href",`./product.html?id=${productArray._id}`);
+          itemImage?.setAttribute ("src", `${productArray.imageUrl}`);
+          itemImage?.setAttribute ("alt", `${productArray.altTxt}`);
           productName.textContent = productArray.name;
           productDescription.textContent = productArray.description;
     
