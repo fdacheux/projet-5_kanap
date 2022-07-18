@@ -118,34 +118,32 @@ const createBoldBorderForElement = (array, colorString) => {
     }
 }
 
-let regex = /^[0-9]*$/;
+let isNumber = /^[0-9]*$/;
 
 function checkQuantityValidity () {
-    quantities = quantityInput.value;
-    if (quantities <= 100 && quantities>0 && quantities !== null && quantities !== NaN && regex.test(quantities) ) {
+    quantities = quantityInput?.value;
+    let style = quantityInput?.style;
+    if (quantities && quantities <= 100 && quantities>0 && isNumber.test(quantities)) {
+        quantityInput.value = Math.floor(quantities);
         createBoldBorderForElement([quantityInput], "green");
-        quantityInput.style.color = "green";
-        quantityInput.style.fontWeight = "unset";
-    }
-    else if (quantities <= 100 && quantities>0 && quantities !== null && quantities !== NaN && !regex.test(quantities)) {
-        quantityInput.value = Math.floor(quantityInput.value);
-        createBoldBorderForElement([quantityInput], "green");
-        quantityInput.style.color = "green";
-        quantityInput.style.fontWeight = "unset"
+        style.color = "green";
+        style.fontWeight = "unset"
     }
     else {
         createBoldBorderForElement([quantityInput], "red");
-        quantityInput.style.color = "red";
-        quantityInput.style.fontWeight = "bold";
+        style.color = "red";
+        style.fontWeight = "bold";
     }
 }
+
+//keep refactor here
 
 quantityInput.addEventListener('keyup', function(){
     checkQuantityValidity();
 });
 
 quantityInput.addEventListener('blur', function(){
-    if(quantities <= 100 && quantities>0 && quantities !== null && quantities !== NaN && regex.test(quantities)){
+    if(quantities <= 100 && quantities>0 && quantities !== null && quantities !== NaN && isNumber.test(quantities)){
         quantityInput.style = null;
     }
 })

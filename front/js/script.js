@@ -13,8 +13,10 @@ fetch(apiUrl)
         let productArray = data;
 
         //Use a map to create cards : 
-        return productArray.map(function(productArray) {
-    
+        return productArray.map(function(product) {
+          
+          const {_id, imageUrl, altTxt, name, description} = {...product};
+
           // Locate DOM elements and clone them
           let template = document.querySelector("#item-card");
           let clone = document.importNode(template.content, true);
@@ -24,11 +26,11 @@ fetch(apiUrl)
           let productDescription = clone.querySelector('.productDescription');
     
         // Inject the API elements inside the clones
-          itemLink?.setAttribute ("href",`./product.html?id=${productArray._id}`);
-          itemImage?.setAttribute ("src", `${productArray.imageUrl}`);
-          itemImage?.setAttribute ("alt", `${productArray.altTxt}`);
-          productName.textContent = productArray.name;
-          productDescription.textContent = productArray.description;
+          itemLink?.setAttribute ("href",`./product.html?id=${_id}`);
+          itemImage?.setAttribute ("src", `${imageUrl}`);
+          itemImage?.setAttribute ("alt", `${altTxt}`);
+          productName.textContent = name;
+          productDescription.textContent = description;
     
         // Generate the cards
           itemCards.appendChild(clone);
