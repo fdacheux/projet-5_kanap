@@ -84,7 +84,9 @@ fetch(PRODUCT_API_URL)
             })
         }
         else {
-            console.error('Retour du serveur : ', response.status)
+            console.error('Retour du serveur : ', response.status);
+            // document.querySelector('article').style.display = "none";
+            // document.querySelector('section').textContent = response.status;
         }
     })
     //Catch error to keep app running, get error specifications on console
@@ -118,10 +120,14 @@ const createBoldBorderForElement = (array, colorString) => {
     }
 }
 
+const resetInputStyle = (element) => {
+    element.removeAttribute('style');   
+}
+
 let isNumber = /^[0-9]*$/;
 
 function checkQuantityValidity () {
-    quantities = quantityInput?.value;
+    quantities = Number.parseInt(quantityInput?.value);
     let style = quantityInput?.style;
     if (quantities && quantities <= 100 && quantities>0 && isNumber.test(quantities)) {
         quantityInput.value = Math.floor(quantities);
@@ -207,15 +213,33 @@ const storeCartLocally = () =>{
 
     // Check if they are valid before send, if not warn
     if ((quantities>100 || quantities<=0 || !quantities) && selectedColor.length<1) {
+        alert('Merci de bien vouloir indiquer une quantité et une couleur valide pour ce produit.')
         COLOR_SELECT_TAG.focus();
         createBoldBorderForElement([quantityInput, COLOR_SELECT_TAG], "red");
     }
     else if (quantities>100 || quantities<=0 || !quantities) {
         quantityInput.focus(); 
-        createBoldBorderForElement([quantityInput], "red");
-        quantityInput.value.textContent = "0";
+        if(quantities<0){
+            alert("Vous ne pouvez pas entrer une quantité négative. Merci de rentrer une quantité comprise entre 1 et 100.")
+            resetInputStyle(quantityInput);
+            createBoldBorderForElement([quantityInput], "orange");
+            quantityInput.value = quantities*-1;
+        }
+        else if(quantities>100){
+            quantityInput.value = 100;
+            resetInputStyle(quantityInput);
+            createBoldBorderForElement([quantityInput], "orange");
+            alert('Vous avez entré une quantité supérieur à 100. Merci de rentrer une quantité comprise entre 1 et 100.');
+        }
+        else{
+            resetInputStyle(quantityInput);
+            createBoldBorderForElement([quantityInput], "orange");
+            alert(`La valeur que vous avez entré n'est pas une quantité valide. Merci de rentrer une quantité comprise entre 1 et 100.`)
+            quantityInput.value = "1";
+        }
     }
     else if (selectedColor.length<1) {
+        alert("Merci de choisir une couleur pour cet article.");
         COLOR_SELECT_TAG.focus();
         createBoldBorderForElement([COLOR_SELECT_TAG], "red");
     }

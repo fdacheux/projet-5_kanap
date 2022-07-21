@@ -34,12 +34,17 @@ fetch(apiUrl)
     
         // Generate the cards
           itemCards.appendChild(clone);
-          
         })
       })
     }
     else{
-      console.error('Retour du serveur : ', response.status)
+      console.error('Retour du serveur : ', response.status);
+      document.querySelector('h1').textContent = "Oups ...";
+      document.querySelector('h2').textContent = `Une erreur ${response.status} est survenue !`
     }
   })
-  .catch(err => console.error(err.stack));
+  .catch(err => {
+    console.error(err.stack);
+    document.querySelector('h1').textContent = "Oups ...";
+    document.querySelector('h2').textContent = `Une erreur est survenue !`
+  });
