@@ -10,7 +10,7 @@ const COLOR_SELECT_TAG = document.getElementById('colors');
 
 // Colors translation 
 
-function translateColour (colour) { //take a string (the colour from API) and translate it in French
+function translateColour (colour) { //take a string (the colour from API) and return its translation it in French
     switch(colour) {
         case "White":
             return "Blanc";
@@ -47,15 +47,18 @@ function translateColour (colour) { //take a string (the colour from API) and tr
     }
 }
 
-// II) FETCH PRODUCT IN API USING URL + ID
+// II) FETCH PRODUCT IN API USING URL + ID AND INSERT ELEMENTS IN PRODUCT PAGE
 
 fetch(PRODUCT_API_URL) 
 
     //Get product object
     .then(response => {
+        //if no 400, 500 exceptions
         if(response.ok){
-            response.json().then(function(data) {
+            response.json()
+            .then(function(data) {
                 const {imageUrl, altTxt, name, price, description, colors} = {...data}
+
                 // ÉTAPE 1 : Insert photo of product
                 const itemImageBox = document.querySelector('.item__img img'); //get node
         
@@ -85,12 +88,16 @@ fetch(PRODUCT_API_URL)
         }
         else {
             console.error('Retour du serveur : ', response.status);
-            // document.querySelector('article').style.display = "none";
-            // document.querySelector('section').textContent = response.status;
+            document.querySelector('article').style.display = "none";
+            document.querySelector('section').textContent = `Oups... une erreur ${response.status} est survenue.`;
         }
     })
     //Catch error to keep app running, get error specifications on console
-    .catch(err => console.error(err.stack));
+    .catch(err => {
+        console.error(err.stack);
+        document.querySelector('article').style.display = "none";
+        document.querySelector('section').textContent = `Oups... une erreur est survenue.`;
+    });
 
 
 
@@ -110,57 +117,69 @@ const quantityInput = document.getElementById('quantity');
 let quantities;
 let selectedColor = '';
 
-//  Check validity of quantity on keyup event and change style of input depending on validity
+// II) CHECK VALIDITY OF QUANTITY INPUT ON KEYUP AND CLICK EVENTS :
 
-// Function that creates bold borders to highlight quantity validity or invalidity
+// Function use :  creates bold borders to highlight quantity validity or invalidity
+// Parameters : an array of the dom elements that will be modified, a string with the name of the color used for the border
 const createBoldBorderForElement = (array, colorString) => {
     for (element of array){
-        element.style.borderColor = colorString;
-        element.style.borderWidth = '3px';
+        let style = element?.style;
+        style.borderColor = colorString;
+        style.borderWidth = '3px';
     }
 }
 
+// Function use : removes all styles injected with js in an element
 const resetInputStyle = (element) => {
     element.removeAttribute('style');   
 }
 
-let isNumber = /^[0-9]*$/;
-
-function checkQuantityValidity () {
-    quantities = Number.parseInt(quantityInput?.value);
+//Function use : adds style properties to a dom element to indicate to user that its input is valid
+function onValidQuantity () {
     let style = quantityInput?.style;
-    if (quantities && quantities <= 100 && quantities>0 && isNumber.test(quantities)) {
-        quantityInput.value = Math.floor(quantities);
-        createBoldBorderForElement([quantityInput], "green");
-        style.color = "green";
-        style.fontWeight = "unset"
+    createBoldBorderForElement([quantityInput], "green");
+    style.color = "green";
+    style.fontWeight = "unset"
+}
+
+//Function use : adds style properties to a dom element to indicate to user that its input is invalid
+function onInvalidQuantity () {
+    createBoldBorderForElement([quantityInput], "red");
+    let style = quantityInput?.style;
+    style.color = "red";
+    style.fontWeight = "bold";
+}
+
+const IS_NUMBER = /^[0-9]*$/;
+
+//Function use : check if quantity input is valid act accordingly 
+function isValidQuantity () {
+    quantities = Number.parseInt(quantityInput?.value);
+    if(quantities && quantities <= 100 && quantities>0 && IS_NUMBER.test(quantities)){
+        quantityInput.value = Math.floor(quantities); //prevent the use of floats for numbers above 1
+        onValidQuantity();
     }
     else {
-        createBoldBorderForElement([quantityInput], "red");
-        style.color = "red";
-        style.fontWeight = "bold";
+        onInvalidQuantity();
     }
 }
 
-//keep refactor here
-
+// Function use : listens to quantity input modifications on keyup indicates validity of what is beiing typed
 quantityInput.addEventListener('keyup', function(){
-    checkQuantityValidity();
+    isValidQuantity();
 });
 
+// Function use : listens to quantity input on blur, if quantity is valid removes style attribute
 quantityInput.addEventListener('blur', function(){
-    if(quantities <= 100 && quantities>0 && quantities !== null && quantities !== NaN && isNumber.test(quantities)){
-        quantityInput.style = null;
+    if(quantities <= 100 && quantities>0 && quantities !== null && quantities !== NaN && IS_NUMBER.test(quantities)){
+        resetInputStyle(quantityInput);
     }
 })
 
-COLOR_SELECT_TAG.addEventListener('click', function() {
-    COLOR_SELECT_TAG.style = null;
-})
-    
-    
 
-// Create new product object in array: 
+// III) STORE CART : CHECK INPUTS, IF VALID ADD IN LOCAL STORAGE
+
+// Function use : creates new product object in array: 
 const addNewProduct = () => {
     let product = {
         id : SELECTED_PRODUCT_ID,
@@ -170,12 +189,12 @@ const addNewProduct = () => {
     CART.push(product);
 }
 
+// Function use : takes a number and return the difference between it and a hundred
 const differenceBetweenQuantityAndHundred = (number) => {
     return 100 - number;
 } 
 
-// Action to take depending on presence of product in cart (either add a new product or increase quantity property of one of them)
-
+// Function use : action to take depending on presence of product in cart => either add a new product or increase quantity property of one of them
 const addProductInCart = () => {
     for (let i=0; i<CART.length; i++){
         Number.parseInt(CART[i].quantity);
@@ -190,6 +209,7 @@ const addProductInCart = () => {
     }
 }
 
+// Function use : check if a product will not have more of a hundred units when increasing its quantity. If below 100 : returns true, else triggers an alert and return false
 const isTotalQuantityIsUnderHundred = () => {
     let success = true;
     for (let i=0; i<CART.length; i++){
@@ -204,39 +224,47 @@ const isTotalQuantityIsUnderHundred = () => {
     return success;
 }
 
-// If quantity and color is valid on click, store the product in local storage
+// Function use : warns user of color selection invalidity through use of a red warning style and by triggering an alert
+function onColorAndInputInvalid () {
+    alert('Merci de bien vouloir indiquer une quantité et une couleur valide pour ce produit.')
+    COLOR_SELECT_TAG.focus();
+    createBoldBorderForElement([quantityInput, COLOR_SELECT_TAG], "red");
+}
 
+// Function use : modifies style on QuantityInput element and triggers alert and manipulates the quantity value depending on which condition it fulfills.
+function onQuantityInputInvalid() {
+
+    resetInputStyle(quantityInput);
+    createBoldBorderForElement([quantityInput], "orange");
+    
+    if(quantityInput.value<0){
+        alert("Vous ne pouvez pas entrer une quantité négative. Merci de rentrer une quantité comprise entre 1 et 100.")
+        quantityInput.value = quantityInput.value*-1;
+    }
+    else if(quantityInput.value>100){
+        quantityInput.value = 100;
+        alert('Vous avez entré une quantité supérieur à 100. Merci de rentrer une quantité comprise entre 1 et 100.');
+    }
+    else{
+        alert(`La valeur que vous avez entré n'est pas une quantité valide. Merci de rentrer un chiffre compris entre 1 et 100.`)
+        quantityInput.value = "1";
+    }
+}
+
+// Function use : adds the product to local storage if quantity and color inputs are valid, else indicates what went wrong and does not add the product to cart
 const storeCartLocally = () =>{
+
     // Get values to add :
     selectedColor = COLOR_SELECT_TAG.options[COLOR_SELECT_TAG.selectedIndex].value;
     quantities = parseInt(quantityInput.value);  
-
+    
     // Check if they are valid before send, if not warn
     if ((quantities>100 || quantities<=0 || !quantities) && selectedColor.length<1) {
-        alert('Merci de bien vouloir indiquer une quantité et une couleur valide pour ce produit.')
-        COLOR_SELECT_TAG.focus();
-        createBoldBorderForElement([quantityInput, COLOR_SELECT_TAG], "red");
+        onColorAndInputInvalid ()
     }
     else if (quantities>100 || quantities<=0 || !quantities) {
         quantityInput.focus(); 
-        if(quantities<0){
-            alert("Vous ne pouvez pas entrer une quantité négative. Merci de rentrer une quantité comprise entre 1 et 100.")
-            resetInputStyle(quantityInput);
-            createBoldBorderForElement([quantityInput], "orange");
-            quantityInput.value = quantities*-1;
-        }
-        else if(quantities>100){
-            quantityInput.value = 100;
-            resetInputStyle(quantityInput);
-            createBoldBorderForElement([quantityInput], "orange");
-            alert('Vous avez entré une quantité supérieur à 100. Merci de rentrer une quantité comprise entre 1 et 100.');
-        }
-        else{
-            resetInputStyle(quantityInput);
-            createBoldBorderForElement([quantityInput], "orange");
-            alert(`La valeur que vous avez entré n'est pas une quantité valide. Merci de rentrer une quantité comprise entre 1 et 100.`)
-            quantityInput.value = "1";
-        }
+        onQuantityInputInvalid(quantities);
     }
     else if (selectedColor.length<1) {
         alert("Merci de choisir une couleur pour cet article.");
@@ -244,13 +272,19 @@ const storeCartLocally = () =>{
         createBoldBorderForElement([COLOR_SELECT_TAG], "red");
     }
     else if (isTotalQuantityIsUnderHundred()){
-    // Check if there is an existing cart and act accordingly
+        // Check if there is an existing cart and act accordingly
         localStorage.getItem('cart') ? addProductInCart() : addNewProduct();
         alert("Le produit a été ajouté");
-
-    // Store the result
+        
+        // Store the result
         return localStorage.setItem('cart', JSON.stringify(CART));
     }
 }
 
 addToCartButton.addEventListener('click', storeCartLocally);
+
+
+//Function use : listens to select element on click, remove style attribute
+COLOR_SELECT_TAG.addEventListener('click', function() {
+    resetInputStyle(COLOR_SELECT_TAG);
+})

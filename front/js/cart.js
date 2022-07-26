@@ -1,29 +1,12 @@
 /************************* FETCH API *************************/
 
 
-//I) FETCH ALL  
+//I) FETCH API  
 
-const API_URL = "http://localhost:3000/api/products"; //global
+const API_URL = "http://localhost:3000/api/products"; 
 
-async function fetchAllProducts (API_URL){
-    try {
-        let response = await fetch(API_URL);
-        if (response.ok){
-            let productsArray = await response.json();
-            return productsArray;
-        }
-        else {
-            console.error('Retour du serveur : ', response.status);
-        }
-    }
-    catch (err) {
-        console.error(err.stack);
-    }
-}
 
-//II) FETCH ONE PRODUCT
-
-// Function that fetches one product
+// ASYNCHRONOUS function use : fetches API taking a product id as paramater and return the product object if call to API is a success, an error message if not :
 async function fetchProduct (id){
     try {
         let response = await fetch(`${API_URL}/${id}`);
@@ -32,7 +15,7 @@ async function fetchProduct (id){
             return productObject;
         }
         else{
-            console.error('Retour du serveur : ', response.status)
+            console.error('Retour du serveur : ', response.status);
         }
     }
     catch (err) {
@@ -46,7 +29,7 @@ const CART = localStorage && localStorage.getItem('cart') ? JSON.parse(localStor
 
 /************************* CREATE CART ON DOM *************************/
 
-// I) CREATE CARD FOR EACH PRODUCT: 
+// I) CREATE CARDS FOR EACH PRODUCT: 
 
 const CART_ITEMS_CARDS = document.getElementById('cart__items'); //select parent div where clone elements will be added
 const TEMPLATE = document.querySelector("#cart__item-card"); //select template for clone purposes
@@ -98,6 +81,7 @@ const selectProductCard = (id, color) => {
 
 // A) Create a model of card and clone it : 
 
+// Function use : creates a model of a card template and asign its elements attributes
 const cloneProductCardTemplate = () => {
             let clone = TEMPLATE.content.cloneNode(true);
             let cartItem = clone.querySelector('article');
@@ -114,17 +98,16 @@ const cloneProductCardTemplate = () => {
 
 // B) Get properties from api and insert it in the right element : 
 
-const calculatePrice = (price, quantity) => { //calculate total price for each article
+//Function use : calculate the product of a price by a quantity
+//Parameters : two numbers
+const calculatePrice = (price, quantity) => { 
     return price*quantity
 }
 
-async function insertPropertiesFromApi () { //fecth properties of product and insert them inside the cards
-    
+// ASYNCHRONOUS FUNCTION use : fetch product data from api insert it inside card elements
+async function insertPropertiesFromApi (product, order) { 
+        const {id, color, quantity:quantities} = {...order}
         // Get elements from CART array
-    
-        let id = element.id;  
-        let color = element.color; 
-        let quantities = element.quantity; 
         let totalPrice = 0;
         let selectedCard = selectProductCard(id, color); //get card using data-id end data-color attributes 
     
@@ -136,29 +119,44 @@ async function insertPropertiesFromApi () { //fecth properties of product and in
         let priceParagraph = itemContentDescription.querySelector('p:nth-of-type(2)');//price (= price*quantity)
         
         // Set attributes and/or text for each property of the selected product
-    
-        let result = await fetchProduct(id); // fetch api, get product properties
-        cartProductImage.setAttribute('src', `${result.imageUrl}`); //Image URL
-        productName.textContent = result.name; // Name of product
-        totalPrice += calculatePrice(result.price, quantities);
-        priceParagraph.textContent = `${totalPrice} €` // Total price for the product 
-            
-        
+        cartProductImage.setAttribute('src', `${product.imageUrl}`); //Image URL
+        productName.textContent = product.name; // Name of product
+        totalPrice += calculatePrice(product.price, quantities);
+        priceParagraph.textContent = `${totalPrice} €` // Total price for the product        
 }
 
 // Create cards for each element
 
-
-function createCardsForProductsInCart() { // Function that creates clones of card template and fills them
-    for (element of CART){
-        cloneProductCardTemplate()
-        insertPropertiesFromApi()
+// Function that creates clones of card template and fills them
+async function createCardsForProductsInCart() { 
+    let result= true;
+    for (order of CART){
+        let product = await fetchProduct(order?.id);
+        if(product){
+            cloneProductCardTemplate()
+            insertPropertiesFromApi(product, order)
+            result &= true;
+        }
+        else {
+            result &= false;
+        }
     }
-    return true;
+    return result;
 }
 
-CART? createCardsForProductsInCart():document.getElementById('cart__items').textContent='Votre panier est vide'; //if Cart isn't null, creates and adds the cards, else warns about cart emptiness;
+// If Cart isn't null, if there is no fetch api errors creates and adds the cards as well as event listeners to update total quantity and price, else warns about cart emptiness;
+CART? createCardsForProductsInCart().then(result => {result? addProductListeners(): displayErrorFetchProducts()}):displayEmptyCart() 
 
+// Function use : Displays a message to warn user taht the cart is empty 
+function displayEmptyCart(){ 
+    document.getElementById('cart__items').textContent='Votre panier est vide';
+}
+
+// Function use : Displays a message when an error occurs with the cart
+function displayErrorFetchProducts(){
+    document.querySelector('.cart__price p').style.display = "none";
+    document.getElementById('cart__items').textContent='Une erreur est survenue lors de la récupération des produits dans votre panier.';
+}
 
 // II) DISPLAY TOTAL OF ALL PRICES AND QUANTITY OF ARTICLES :
 
@@ -167,9 +165,10 @@ CART? createCardsForProductsInCart():document.getElementById('cart__items').text
     
 let totalQuantity = 0; //Array to put all quantities
 
+// Function use : get quantities from each element of cart and and add it to totalQuantities variable then display the sum result in totalQuantity dom element
 const getTotalQuantity = () => {
     for (element of CART){
-        totalQuantity+=element.quantity; // Loop to add all articles quantities 
+        totalQuantity+=element?.quantity; // Loop to add all articles quantities 
     }
     document.getElementById('totalQuantity').textContent = totalQuantity; // Display it 
 };
@@ -178,15 +177,16 @@ getTotalQuantity()
 
 // B) Calculate total of all prices 
 
-let total = 0; // total of all prices 
+let total = 0;
 
-// Function that pushes the total of an article in an array
+// ASYNCHRONOUS FUNCTION use : pushes the total of an article in an array
 async function getPricePerQuantity(id, quantity) {
     const product = await fetchProduct(id);
     const price = product && product.price ? product.price : 0;
     return price*quantity;
 }
 
+// ASYNCHRONOUS FUNCTION use : calculates the total price of all products in cart and displays it
 async function getTotalPrice () {
     for (element of CART){ //loop on cart elements
             total += await getPricePerQuantity(element.id, element.quantity); //Sum of the totals 
@@ -200,20 +200,15 @@ getTotalPrice();
 
 /************************* ADD ELEMENT IN CART FROM CART PAGE *************************/
 
-// Elements to listen to
-// let idArray = [];
-// for (element of CART){
-//     idArray.push(element.id);
-// }
-
 const ALL_PRODUCTS_ARTICLES = document.querySelectorAll(`[data-id]`);
 
+// Function use : update quantity of an proudct in local storage
 const updateQuantityInCart = (elementToUpdate, quantity) => {
     elementToUpdate.quantity = parseInt(quantity);
     return localStorage.setItem('cart', JSON.stringify(CART))
 }
 
-
+//Function use : apply a style to signal validity of input to user
 function inputIsValidStyle (element) {
     let style = element?.style;
     style.borderColor = "green";
@@ -222,6 +217,7 @@ function inputIsValidStyle (element) {
     style.fontWeight = "unset"; 
 }
 
+//Function use : apply a style to signal invalidity of input to user
 function inputIsNotValidStyle (element) {
     let style = element?.style;
     style.borderColor = "red";
@@ -230,21 +226,24 @@ function inputIsNotValidStyle (element) {
     style.fontWeight = "bold"; 
 }
 
+//Function use : reset syle of an input element
 function resetInputStyle (element) {
     element.removeAttribute('style');   
 }
 
+//Function use : remove a product from local storage
 function removeProductFromLocalStorage (productIndex) {
     CART.splice(productIndex, 1);
     return localStorage.setItem('cart', JSON.stringify(CART))
 }
 
-
+//Function use : remove a product from cart array and if cart array's lenghth is above 1 remove it from local storage, else clear local storage
 function removeProductFromCart(productIndex, productCard) {
     CART.length > 1 ? removeProductFromLocalStorage (productIndex) : clearCart();
     return productCard.remove();
 }
 
+// Function use : clear local storage, and displays a message to warn user that the cart is empty
 function clearCart () {
     localStorage.clear();
     CART.splice(0, 1);
@@ -252,7 +251,8 @@ function clearCart () {
 }
 
 
-document.querySelectorAll('[data-id]').forEach(productCard => {
+function addProductListeners () {
+    document.querySelectorAll('[data-id]').forEach(productCard => {
     let dataSet = productCard?.dataset;
     let id = dataSet?.id;
     let productColor = dataSet?.color;
@@ -298,7 +298,8 @@ document.querySelectorAll('[data-id]').forEach(productCard => {
         let value = target?.value;
         value && value<100 && value>0 ? resetInputStyle(target): null; //when blur, if element isn't valid, apply a red style to warn there's an error 
     })
-});
+})
+}
 
 async function changePrice (id, quantity, paragraph) { //change price depending on quantity 
     let newPrice = await getPricePerQuantity (id, quantity);
@@ -331,7 +332,7 @@ const CONTAIN_CONSECUTIVE_SYMBOLS = /[.\-\' \_@]{2}/;
 const CONTAIN_FORBIDDEN_SYMBOLS = /[\!\@\$\%\^\&\*\(\)\,\?\"\:\{\}\|\<\>\=\+\;\/\\]+/;
 const MAIL_FORBIDDEN_SPECIAL_CHARACTERS = /[^\w\@\.\-]+/;
 const ADDRESS_REGEX = /[^\w\d\[À-ÿ],\-\'\ ]+|[_]+/
-const MAIL_REGEX = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+const MAIL_REGEX = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w+)+$/;
 
 //Select elements to listen to
 
@@ -515,6 +516,10 @@ EMAIL_INPUT.addEventListener('blur', event => {
     let value = target?.value;
     if(!CONTAIN_CONSECUTIVE_SYMBOLS.test(value) && MAIL_REGEX.test(value)){
         resetInputStyle(target);
+    }
+    else {
+        target.style.border = "red solid 3px";
+        EMAIL_ERROR_MESSAGE.textContent = "Le format de l'email est invalide. Merci de rentrer une adresse valide (ex: my-email@domain.name).";
     }
 });
 
